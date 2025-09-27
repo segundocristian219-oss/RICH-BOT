@@ -23,7 +23,7 @@ export async function before(m, { conn, isAdmin }) {
             try {
                 await conn.reply(
                     m.chat,
-                    `⚠️ *Se ha borrado un enlace enviado por *@${m.sender.split('@')[0]}*`,
+                    `⚠️ *𝙽𝚘 𝚂𝚎 𝚙𝚎𝚛𝚖𝚒𝚝𝚎𝚗 𝙻𝚒𝚗𝚔𝚜* *@${m.sender.split('@')[0]}*`,
                     null,
                     { mentions: [m.sender] }
                 )
