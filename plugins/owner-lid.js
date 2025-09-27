@@ -29,7 +29,7 @@ const handler = async (msg, { conn }) => {
 
   // Segundo mensaje: Solo el LID para copiar fácilmente
   await conn.sendMessage(chatId, {
-    text: `\n${objetivo}`
+    text: `${objetivo}`
   })
 }
 
