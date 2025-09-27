@@ -47,7 +47,7 @@ const handler = async (msg, { conn, command }) => {
 
   if (!mediaMessage) {
     return conn.sendMessage(chatId, {
-      text: `✳️ *Usa:*\n${pref}${command}\n📌 Envía o responde a una imagen, video, sticker o audio para subirlo.`
+      text: `🏞️ *𝚁𝚎𝚜𝚙𝚘𝚗𝚍𝚎 𝚊 𝚞𝚗𝚊 𝙸𝚖𝚊𝚐𝚎𝚗, 𝚅𝚒𝚍𝚎𝚘 𝚘 𝙰𝚞𝚍𝚒𝚘 𝚙𝚊𝚛𝚊 𝚂𝚞𝚋𝚒𝚛 𝚎𝚕 𝚞𝚛𝚕*.`
     }, { quoted: msg });
   }
 
@@ -70,7 +70,7 @@ const handler = async (msg, { conn, command }) => {
     const stats = fs.statSync(rawPath);
     if (stats.size > 200 * 1024 * 1024) {
       fs.unlinkSync(rawPath);
-      throw new Error('⚠️ El archivo excede el límite de 200MB.');
+      throw new Error('⚠️ *𝙴𝚕 𝙰𝚛𝚌𝚑𝚒𝚟𝚘 𝚎𝚜 𝚖𝚞𝚢 𝙶𝚛𝚊𝚗𝚍𝚎*.');
     }
 
     let finalPath = rawPath;
@@ -95,7 +95,7 @@ const handler = async (msg, { conn, command }) => {
 
     fs.unlinkSync(finalPath);
 
-    if (!res.data || !res.data.url) throw new Error('❌ No se pudo subir el archivo.');
+    if (!res.data || !res.data.url) throw new Error('❌ *𝙽𝚘 𝚂𝚎 𝚙𝚞𝚍𝚘 𝚜𝚞𝚋𝚒𝚛 𝚎𝚕 𝙰𝚛𝚌𝚑𝚒𝚟𝚘*.');
 
     await conn.sendMessage(chatId, {
       text: `➤ 𝖮𝖱𝖣𝖤𝖭 𝖤𝖩𝖤𝖢𝖴𝖳𝖠𝖣𝖠 ✅
