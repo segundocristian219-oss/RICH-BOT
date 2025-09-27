@@ -116,6 +116,5 @@ handler.all = async function (_0x4960d9, { conn }) {
 // 🔥 Flags finales
 handler.command = /^(mute|unmute)$/i;
 handler.group = !![];
-handler.admin = !![];
 
 export default handler;
