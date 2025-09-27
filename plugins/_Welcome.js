@@ -6,6 +6,8 @@ export async function before(m, { conn, participants, groupMetadata }) {
   const defaultPP = 'https://cdn.russellxz.click/262f94ad.jpeg'
 
   let chat = global.db.data.chats[m.chat]
+  if (chat.bienvenida === undefined) chat.bienvenida = true
+
   let userJid = m.messageStubParameters[0]
   let user = `@${userJid.split('@')[0]}`
   let groupName = groupMetadata.subject
@@ -18,7 +20,6 @@ export async function before(m, { conn, participants, groupMetadata }) {
     profilePic = defaultPP
   }
 
-  // BIENVENIDA
   if (chat.bienvenida && m.messageStubType === 27) {
     let welcome = chat.sWelcome
       ? chat.sWelcome
@@ -39,7 +40,6 @@ export async function before(m, { conn, participants, groupMetadata }) {
     })
   }
 
-  // DESPEDIDA
   if (chat.bienvenida && (m.messageStubType === 28 || m.messageStubType === 32)) {
     const msgsBye = [
       `*╭┈┈┈┈┈┈┈┈┈┈┈┈┈≫*
