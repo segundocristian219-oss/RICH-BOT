@@ -5,10 +5,10 @@ let handler = async (m, { conn }) => {
 
   if (!user) {
     await conn.sendMessage(m.chat, { 
-      text: '☁️ Por favor, responde o menciona a alguien para promover.', 
+      text: '☁️ *𝙿𝚘𝚛 𝚏𝚊𝚟𝚘𝚛, 𝚁𝚎𝚜𝚙𝚘𝚗𝚍𝚎 𝚘 𝚖𝚎𝚗𝚌𝚒𝚘𝚗𝚊 𝙰𝚕 𝚞𝚜𝚞𝚊𝚛𝚒𝚘 𝚚𝚞𝚎 𝚍𝚎𝚜𝚎𝚊𝚜 𝚙𝚛𝚘𝚖𝚘𝚟𝚎𝚛*.', 
       contextInfo: { stanzaId: m.key.id, participant: m.sender, quotedMessage: m.message } 
     });
-    await conn.sendMessage(m.chat, { react: { text: '🧾', key: m.key } });
+    await conn.sendMessage(m.chat, { react: { text: '🏞️', key: m.key } });
     return;
   }
 
@@ -18,7 +18,7 @@ let handler = async (m, { conn }) => {
 
     if (admins.includes(user)) {
       await conn.sendMessage(m.chat, { 
-        text: '☁️ Este usuario ya es admin.', 
+        text: '☁️ *𝙴𝚜𝚝𝚎 𝚞𝚜𝚞𝚊𝚛𝚒𝚘 𝚢𝚊 𝚎𝚜 𝙰𝚍𝚖𝚒𝚗*.', 
         contextInfo: { stanzaId: m.key.id, participant: m.sender, quotedMessage: m.message } 
       });
       await conn.sendMessage(m.chat, { react: { text: '🧾', key: m.key } });
