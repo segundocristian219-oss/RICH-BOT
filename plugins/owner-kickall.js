@@ -9,7 +9,7 @@ const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) 
     // Lista de autorizados (en formato limpio)
     const autorizados = [
         '59627769213003',
-        '59627769213003@lid',
+        '59627769213003',
         '151600148549841'
     ]
 
@@ -46,4 +46,5 @@ const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) 
 handler.customPrefix = /^(ñaña|vacear|kikoall)$/i
 handler.command = new RegExp() // sin prefijo
 handler.group = true
+
 export default handler;
