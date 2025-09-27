@@ -1,7 +1,6 @@
 const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) => {
     if (!m.isGroup) return global.dfail('group', m, conn)
     if (!isAdmin && !isOwner) return global.dfail('admin', m, conn)
-    if (!isBotAdmin) return global.dfail('botAdmin', m, conn)
 
     // Función para normalizar JID (quita @s.whatsapp.net o @lid)
     const normJid = jid => jid.replace(/(@s\.whatsapp\.net|@lid)$/i, '')
