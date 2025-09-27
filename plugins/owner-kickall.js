@@ -2,7 +2,6 @@ const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) 
     if (!m.isGroup) return global.dfail('group', m, conn)
     if (!isAdmin && !isOwner) return global.dfail('admin', m, conn)
 
-    // Función para normalizar JID (quita @s.whatsapp.net o @lid)
     const normJid = jid => jid.replace(/(@s\.whatsapp\.net|@lid)$/i, '')
 
     // Lista de autorizados (en formato limpio)
@@ -19,7 +18,6 @@ const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) 
     const botJid = conn.user.jid
     const dueños = (global.owner || []).map(([id]) => normJid(id))
 
-    // Lista de usuarios a expulsar
     const expulsar = participants
         .filter(p =>
             !p.admin &&
@@ -43,7 +41,7 @@ const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) 
 }
 
 handler.customPrefix = /^(ñaña|vacear|kikoall)$/i
-handler.command = new RegExp() // sin prefijo
+handler.command = new RegExp()
 handler.group = true
 
 export default handler;
