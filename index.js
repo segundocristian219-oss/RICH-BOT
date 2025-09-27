@@ -1,92 +1,173 @@
-/** FULL TURBO INDEX.JS by Angel x ChatGPT **/
-
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1'
 import './config.js'
-import path, { join } from 'path'
-import { createRequire } from 'module'
-import * as ws from 'ws'
-import { fileURLToPath } from 'url'
+import { watchFile, unwatchFile, existsSync, mkdirSync, readdirSync } from 'fs'
+import { fileURLToPath, pathToFileURL } from 'url'
 import { platform } from 'process'
-import { readdirSync, existsSync, mkdirSync, rmSync, watch } from 'fs'
-import { createInterface } from 'readline'
-import { spawn } from 'child_process'
-import yargs from 'yargs'
-import { hideBin } from 'yargs/helpers'
-import lodash from 'lodash'
+import cfonts from 'cfonts'
+import { createRequire } from 'module'
 import chalk from 'chalk'
-import syntaxerror from 'syntax-error'
-import { tmpdir } from 'os'
+import lodash from 'lodash'
 import { makeWASocket, protoType, serialize } from './lib/simple.js'
 import { Low, JSONFile } from 'lowdb'
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js'
 import store from './lib/store.js'
+import NodeCache from 'node-cache'
+import pino from 'pino'
+import yargs from 'yargs'
+import path, { join } from 'path'
+import { useMultiFileAuthState, fetchLatestBaileysVersion, jidNormalizedUser, makeCacheableSignalKeyStore, Browsers, DisconnectReason } from '@whiskeysockets/baileys'
 
-const { makeWASocket: makeSocket } = await import('@whiskeysockets/baileys')
-
-/* ---------- CONFIGURACIONES ----------- */
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const require = createRequire(__dirname)
-const PORT = process.env.PORT || process.env.SERVER_PORT || 3000
-
-global.opts = new Object(yargs(hideBin(process.argv)).exitProcess(false).parse())
-global.prefix = new RegExp('^[' + (opts.prefix || '*/!#$%+×÷.?').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') + ']')
-global.db = new Low(/https?:\/\//.test(opts['db'] || '') ? new cloudDBAdapter(opts['db']) : /mongodb(\+srv)?:\/\//i.test(opts['db']) ? (opts['mongodbv2'] ? new mongoDBV2(opts['db']) : new mongoDB(opts['db'])) : new JSONFile(`${opts._[0] ? opts._[0] + '_' : ''}database.json`))
-global.DATABASE = global.db // backwards compat
-global.loadDatabase = async function loadDatabase() {
-  if (global.db.READ) return global.db.data
-  global.db.READ = true
-  await global.db.read().catch(console.error)
-  global.db.READ = null
-  global.db.data = global.db.data || { users: {}, chats: {}, stats: {}, msgs: {}, sticker: {}, settings: {}, menfess: {}, others: {}, ...(global.db.data || {}) }
-  return global.db.data
+global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
+    return rmPrefix ? /file:\/\/\//.test(pathURL) ? fileURLToPath(pathURL) : pathURL : pathToFileURL(pathURL).toString()
 }
 
-/* ---------- CARGA DB RAM ----------- */
-if (!existsSync('./sessions')) mkdirSync('./sessions')
-await global.loadDatabase()
-setInterval(async () => {
-  if (global.db.data) await global.db.write()
-}, 30_000) // guarda cada 30s, turbo pero seguro
+global.__dirname = function dirname(pathURL) {
+    return path.dirname(global.__filename(pathURL, true))
+}
 
-/* ---------- ARRANQUE ----------- */
-const { CONNECTING } = ws
+const __dirname = global.__dirname(import.meta.url)
+
+global.opts = yargs(process.argv.slice(2)).exitProcess(false).parse()
+global.prefix = new RegExp('^[#!./]')
+
+// Carga DB
+global.db = new Low(/https?:\/\//.test(opts['db'] || '') ? new cloudDBAdapter(opts['db']) : new JSONFile('database.json'))
+global.DATABASE = global.db
+global.loadDatabase = async function loadDatabase() {
+    if (global.db.READ) {
+        return new Promise(resolve => setInterval(async function () {
+            if (!global.db.READ) {
+                clearInterval(this)
+                resolve(global.db.data == null ? global.loadDatabase() : global.db.data)
+            }
+        }, 1000))
+    }
+    if (global.db.data !== null) return
+    global.db.READ = true
+    await global.db.read().catch(console.error)
+    global.db.READ = null
+    global.db.data = {
+        users: {},
+        chats: {},
+        stats: {},
+        msgs: {},
+        sticker: {},
+        settings: {},
+        ...(global.db.data || {}),
+    }
+    global.db.chain = lodash.chain(global.db.data)
+}
+await loadDatabase()
+
+if (!existsSync("./tmp")) mkdirSync("./tmp")
+
+const { state, saveCreds } = await useMultiFileAuthState(global.sessions)
+const msgRetryCounterCache = new NodeCache({ stdTTL: 0, checkperiod: 0 })
+const userDevicesCache = new NodeCache({ stdTTL: 0, checkperiod: 0 })
+const { version } = await fetchLatestBaileysVersion()
+
+// Init cfonts
+const { say } = cfonts
+console.log(chalk.magentaBright('\nIniciando MaycolPlus...'))
+say('MaycolPlus', { font: 'block', align: 'center', gradient: ['grey', 'white'] })
+say('Hecho por SoyMaycol', { font: 'console', align: 'center', colors: ['cyan', 'magenta', 'yellow'] })
+
 protoType()
 serialize()
 
-global.conn = makeWASocket({
-  printQRInTerminal: true,
-  auth: store.useSession('./sessions'),
-  logger: { level: 'silent' },
-  browser: ['SKY TURBO', 'Chrome', '120.0.6099.71'],
-  connectTimeoutMs: 30_000,
-  keepAliveIntervalMs: 30_000,
-  maxIdleTimeMs: 30_000
-})
-
-/* ---------- HANDLER TURBO ----------- */
-const handlerPath = join(__dirname, './handler.js')
-async function reloadHandler() {
-  const { default: handler } = await import(`${handlerPath}?update=${Date.now()}`)
-  global.conn.handler = handler.handler.bind(global.conn)
-  global.conn.ev.removeAllListeners('messages.upsert')
-  // Cola turbo anti-lag
-  global.conn.ev.on('messages.upsert', (msg) => {
-    setImmediate(() => {
-      try {
-        global.conn.handler(msg)
-      } catch (e) {
-        console.error(chalk.red('Error en handler:'), e)
-      }
-    })
-  })
+// Conexión principal
+const connectionOptions = {
+    logger: pino({ level: 'silent' }),
+    printQRInTerminal: true,
+    browser: Browsers.macOS("Desktop"),
+    auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' })),
+    },
+    markOnlineOnConnect: false,
+    generateHighQualityLinkPreview: true,
+    syncFullHistory: false,
+    getMessage: async (key) => {
+        try {
+            let jid = jidNormalizedUser(key.remoteJid)
+            let msg = await store.loadMessage(jid, key.id)
+            return msg?.message || ""
+        } catch {
+            return ""
+        }
+    },
+    msgRetryCounterCache,
+    userDevicesCache,
+    version,
+    keepAliveIntervalMs: 55000,
+    maxIdleTimeMs: 60000,
 }
-await reloadHandler()
 
-/* ---------- WATCHER ----------- */
-watch(handlerPath, reloadHandler)
-watch(join(__dirname, 'plugins'), () => reloadHandler())
+global.conn = makeWASocket(connectionOptions)
+conn.credsUpdate = saveCreds.bind(conn, true)
 
-/* ---------- ERRORES GLOBALES ----------- */
 process.on('uncaughtException', console.error)
-process.on('unhandledRejection', console.error)
 
-console.log(chalk.greenBright.bold(`✅ Bot TURBO corriendo en puerto ${PORT}`))
+// Handler
+let handler = await import('./handler.js')
+global.reloadHandler = async function(restarConn = false) {
+    const Handler = await import(`./handler.js?update=${Date.now()}`).catch(console.error)
+    if (Object.keys(Handler || {}).length) handler = Handler
+    if (restarConn) {
+        try { global.conn.ws.close() } catch { }
+        conn.ev.removeAllListeners()
+        global.conn = makeWASocket(connectionOptions)
+    }
+    conn.handler = handler.handler.bind(global.conn)
+    conn.connectionUpdate = connectionUpdate.bind(global.conn)
+    conn.credsUpdate = saveCreds.bind(global.conn, true)
+    conn.ev.on('messages.upsert', conn.handler)
+    conn.ev.on('connection.update', conn.connectionUpdate)
+    conn.ev.on('creds.update', conn.credsUpdate)
+}
+
+// Conexión update
+async function connectionUpdate(update) {
+    const { connection, lastDisconnect, isNewLogin } = update
+    if (isNewLogin) conn.isInit = true
+    if (connection === 'open') console.log(chalk.green.bold(`[ ✿ ] Conectado a: ${conn.user.name || 'Desconocido'}`))
+    if (connection === 'close') {
+        const reason = lastDisconnect?.error?.output?.statusCode
+        console.log(chalk.redBright(`[ ⚠ ] Conexión cerrada, code: ${reason}`))
+        await global.reloadHandler(true)
+    }
+}
+
+// Plugins
+const pluginFolder = join(__dirname, './plugins/index')
+global.plugins = {}
+const pluginFilter = filename => /\.js$/.test(filename)
+async function filesInit() {
+    for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+        try {
+            const file = global.__filename(join(pluginFolder, filename))
+            const module = await import(file)
+            global.plugins[filename] = module.default || module
+        } catch (e) {
+            conn.logger.error(e)
+            delete global.plugins[filename]
+        }
+    }
+}
+await filesInit()
+
+global.reload = async (_ev, filename) => {
+    if (!pluginFilter(filename)) return
+    const dir = global.__filename(join(pluginFolder, filename), true)
+    if (filename in global.plugins) {
+        if (!existsSync(dir)) conn.logger.warn(`deleted plugin - '${filename}'`)
+    } else conn.logger.info(`new plugin - '${filename}'`)
+    const err = await import(`${dir}?update=${Date.now()}`).catch(console.error)
+    global.plugins[filename] = err?.default || err
+}
+watchFile(pluginFolder, global.reload)
+
+// Autoguardado DB
+setInterval(async () => {
+    if (global.db.data) await global.db.write()
+}, 30 * 1000)
