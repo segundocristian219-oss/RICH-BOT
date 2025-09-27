@@ -4,7 +4,6 @@ export async function before(m, { conn, participants, groupMetadata }) {
   const chat = global.db.data.chats[m.chat]
   chat.messages = chat.messages || {}
 
-  // Guardar mensajes entrantes en el historial para antiborrar
   if (m.message && !m.key.fromMe) {
     chat.messages[m.key.id] = {
       sender: m.sender,
@@ -13,24 +12,21 @@ export async function before(m, { conn, participants, groupMetadata }) {
     }
   }
 
-  // ANTIBORRAR
-  if (m.messageStubType === 100 && chat.delete) { // 100 = mensaje eliminado
+  if (m.messageStubType === 100 && chat.delete) {
     try {
       const deletedUserJid = m.messageStubParameters[0]
       const userTag = `@${deletedUserJid.split('@')[0]}`
 
-      // Recuperar mensaje del historial
       const deletedMsg = chat.messages[m.key.id]
-      const content = deletedMsg?.message?.conversation
-        || deletedMsg?.message?.extendedTextMessage?.text
-        || '*No se pudo recuperar el contenido*'
+      if (!deletedMsg) return
 
       await conn.sendMessage(m.chat, {
-        text: `⚠️ ${userTag} intentó borrar un mensaje:\n\n${content}`,
+        text: `⚠️ ${userTag} intentó borrar un mensaje.`,
         mentions: [deletedUserJid]
       })
 
-      // Opcional: eliminar del historial para no acumular
+      await conn.copyNForward(m.chat, deletedMsg.message, true)
+
       delete chat.messages[m.key.id]
     } catch (e) {
       console.log('Error en antiborrar:', e)
