@@ -1,4 +1,4 @@
-const linkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
+const urlRegex = /(https?:\/\/[^\s]+)/i
 
 export async function before(m, { conn, isAdmin }) {
     if (m.isBaileys && m.fromMe) return !0
@@ -8,37 +8,26 @@ export async function before(m, { conn, isAdmin }) {
     if (!chat.antiLink) return !0
 
     const body = (m.text || "").toLowerCase()
-    const isGroupLink = linkRegex.exec(body)
+    const isUrl = urlRegex.test(body)
 
-    if (isGroupLink && !isAdmin) {
-        let thisGroupLink = ""
+    if (isUrl && !isAdmin) {
         try {
-            thisGroupLink = `https://chat.whatsapp.com/${await this.groupInviteCode(m.chat)}`
-        } catch (e) {}
+            const thisGroupLink = `https://chat.whatsapp.com/${await this.groupInviteCode(m.chat)}`
+            if (body.includes(thisGroupLink.toLowerCase())) return !0
+            if (m.sender === this.user.jid) return !0
 
-        // no hacer nada si es el link del mismo grupo
-        if (thisGroupLink && body.includes(thisGroupLink)) return !0
+            try {
+                await conn.sendMessage(m.chat, { delete: m.key })
+            } catch (e) {}
 
-        try {
-            await conn.reply(
-                m.chat,
-                `*⚠️ _Enlace detectado_*\n\nEl usuario *@${m.sender.split('@')[0]}* será expulsado.`,
-                null,
-                { mentions: [m.sender] }
-            )
-        } catch (e) {}
-
-        // intentar borrar mensaje
-        try {
-            await conn.sendMessage(m.chat, { delete: m.key })
-        } catch (e) {}
-
-        // evitar expulsar a owners o al mismo bot
-        try {
-            const owners = (global.owner || []).map(v => v.replace(/[^0-9]/g, '') + "@s.whatsapp.net")
-            if (![...owners, this.user.jid].includes(m.sender)) {
-                await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-            }
+            try {
+                await conn.reply(
+                    m.chat,
+                    `⚠️ *Se ha borrado un enlace enviado por *@${m.sender.split('@')[0]}*`,
+                    null,
+                    { mentions: [m.sender] }
+                )
+            } catch (e) {}
         } catch (e) {}
     }
 
