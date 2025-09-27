@@ -1,7 +1,6 @@
-// setbye.js
-export async function handler(m, { conn, text }) {
+const handler = async (m, { conn, text }) => {
   if (!m.isGroup) return m.reply('Este comando solo funciona en grupos.')
-  
+
   if (!text) return m.reply(
     'Escribe el mensaje de despedida que quieras establecer.\n\n' +
     'Puedes usar los siguientes placeholders:\n' +
@@ -16,8 +15,8 @@ export async function handler(m, { conn, text }) {
   m.reply(`✅ Mensaje de despedida actualizado:\n\n${text}`)
 }
 
-// Configuración del comando
-handler.command = ['setbye']
-handler.group = true
+handler.command = /^setbye$/i
+handler.help = ["setbye <texto>"]
+handler.tags = ["group"]
 
-export { handler }
+export default handler
