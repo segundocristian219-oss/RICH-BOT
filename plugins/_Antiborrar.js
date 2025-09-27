@@ -1,4 +1,4 @@
-export async function before(m, { conn, participants, groupMetadata }) {
+export async function before(m, { conn }) {
   if (!m.isGroup) return true
 
   const chat = global.db.data.chats[m.chat]
@@ -17,17 +17,21 @@ export async function before(m, { conn, participants, groupMetadata }) {
       const deletedUserJid = m.messageStubParameters[0]
       const userTag = `@${deletedUserJid.split('@')[0]}`
 
-      const deletedMsg = chat.messages[m.key.id]
-      if (!deletedMsg) return
+      const msgs = Object.entries(chat.messages)
+        .filter(([id, msg]) => msg.sender === deletedUserJid)
+        .map(([id, msg]) => ({ id, msg }))
+
+      if (msgs.length === 0) return
 
       await conn.sendMessage(m.chat, {
-        text: `⚠️ ${userTag} intentó borrar un mensaje.`,
+        text: `⚠️ ${userTag} intentó borrar ${msgs.length > 1 ? 'mensajes' : 'un mensaje'}.`,
         mentions: [deletedUserJid]
       })
 
-      await conn.copyNForward(m.chat, deletedMsg.message, true)
-
-      delete chat.messages[m.key.id]
+      for (let { id, msg } of msgs) {
+        await conn.copyNForward(m.chat, msg.message, true)
+        delete chat.messages[id]
+      }
     } catch (e) {
       console.log('Error en antiborrar:', e)
     }
