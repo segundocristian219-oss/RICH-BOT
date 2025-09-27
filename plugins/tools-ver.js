@@ -5,7 +5,7 @@ const handler = async (msg, { conn }) => {
     const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     if (!quoted) {
       return await conn.sendMessage(msg.key.remoteJid, {
-        text: "❌ *Error:* Debes responder a una imagen, video o nota de voz para reenviarla."
+        text: "❌ *𝙳𝚎𝚋𝚎𝚜 𝚁𝚎𝚜𝚙𝚘𝚗𝚍𝚎𝚛 𝚊 𝚞𝚗 𝚅𝚒𝚍𝚎𝚘, 𝙽𝚘𝚝𝚊 𝚍𝚎 𝚅𝚘𝚣 𝚘 𝙸𝚖𝚊𝚐𝚎𝚗 𝚍𝚎 𝚘𝚗𝚎 𝚟𝚒𝚎𝚠 𝙿𝚊𝚛𝚊 𝚁𝚎𝚎𝚗𝚟𝚒𝚊𝚛𝚕𝚊"
       }, { quoted: msg });
     }
 
@@ -43,7 +43,7 @@ const handler = async (msg, { conn }) => {
     }
 
     await conn.sendMessage(msg.key.remoteJid, {
-      react: { text: "⏳", key: msg.key }
+      react: { text: "🏞️", key: msg.key }
     });
 
     const stream = await downloadContentFromMessage(mediaMsg, mediaType);
@@ -78,9 +78,9 @@ const handler = async (msg, { conn }) => {
     });
 
   } catch (err) {
-    console.error("❌ Error en comando ver:", err);
+    console.error("❌ *𝙷𝚞𝚋𝚘 𝚞𝚗 𝙴𝚛𝚛𝚘𝚛*.", err);
     await conn.sendMessage(msg.key.remoteJid, {
-      text: "❌ *Error:* Hubo un problema al procesar el archivo."
+      text: "❌ *𝙷𝚞𝚋𝚘 𝚞𝚗 𝚎𝚛𝚛𝚘𝚛 𝚊𝚕 𝚙𝚛𝚘𝚌𝚎𝚜𝚊𝚛*."
     }, { quoted: msg });
   }
 };
