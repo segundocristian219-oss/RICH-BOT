@@ -64,8 +64,8 @@ const handler = async (msg, { conn }) => {
     await conn.sendMessage(chatId, { react: { text: '✅', key: msg.key } });
 
   } catch (err) {
-    console.error('❌ Error en sticker s:', err);
-    await conn.sendMessage(chatId, { text: '❌ *Hubo un error al procesar el sticker.*' }, { quoted: msg });
+    console.error('❌ *𝙴𝚛𝚛𝚘𝚛 𝚎𝚗 𝚜𝚝𝚒𝚌𝚔𝚎𝚛* s:', err);
+    await conn.sendMessage(chatId, { text: '❌ *𝙷𝚞𝚋𝚘 𝚞𝚗 𝚎𝚛𝚛𝚘𝚛 𝙰𝚕 𝚐𝚎𝚗𝚎𝚛𝚊𝚛 𝚎𝚕 𝚂𝚝𝚒𝚌𝚔𝚎𝚛*.' }, { quoted: msg });
     await conn.sendMessage(chatId, { react: { text: '❌', key: msg.key } });
   }
 };
