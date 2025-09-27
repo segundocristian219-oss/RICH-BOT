@@ -29,7 +29,7 @@ const handler = async (msg, { conn, args, command }) => {
 
     if (!results || !results.length || !results[0].url) {
       return conn.sendMessage(chatId, {
-        text: "🚫 *No se pudo obtener el video.*"
+        text: "🚫 *𝙽𝚘 𝚜𝚎 𝚙𝚞𝚍𝚘 𝙾𝚋𝚝𝚎𝚗𝚎𝚛 𝚎𝚕 𝚅𝚒𝚍𝚎𝚘.*"
       }, { quoted: msg })
     }
 
