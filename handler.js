@@ -392,7 +392,7 @@ está cerrada por órdenes del creador.`
 
 }[type]
 
-if (msg) return m.reply(msg + "\n\n> ✦ Hecho por SoyMaycol <3 ✦").then(_ => m.react('🌸'))
+if (msg) return m.reply(msg + "\n\n> ✦ Hecho por Soyhernandez <3 ✦").then(_ => m.react('🔗'))
 }
 
 let file = global.__filename(import.meta.url, true)
