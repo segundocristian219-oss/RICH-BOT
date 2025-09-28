@@ -6,12 +6,26 @@ import { promisify } from "util"
 import { pipeline } from "stream"
 
 const streamPipe = promisify(pipeline)
-const MAX_FILE_SIZE = 60 * 1024 * 1024
+const MAX_FILE_SIZE = 60 * 1024 * 1024 // 60 MB
+
+const fetchApi = (name, url, timeoutMs = 8000) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  return axios.get(url, { signal: controller.signal })
+    .then(r => {
+      clearTimeout(timeout)
+      const link = r.data?.result?.url || r.data?.data?.url
+      if (!link || !r.data?.status) throw new Error("Sin link válido")
+      return { url: link, api: name }
+    })
+    .catch(err => {
+      clearTimeout(timeout)
+      throw new Error(`${name}: ${err.message}`)
+    })
+}
 
 const handler = async (msg, { conn, text }) => {
-  if (!text?.trim()) {
-    return conn.sendMessage(msg.key.remoteJid, { text: "🎬 Ingresa el nombre de algún video" }, { quoted: msg })
-  }
+  if (!text?.trim()) return conn.sendMessage(msg.key.remoteJid, { text: "🎬 Ingresa el nombre de algún video" }, { quoted: msg })
 
   await conn.sendMessage(msg.key.remoteJid, { react: { text: "🕒", key: msg.key } })
 
@@ -22,34 +36,23 @@ const handler = async (msg, { conn, text }) => {
   const { url: videoUrl, title, timestamp: duration, author } = video
   const artista = author.name
 
-  let videoDownloadUrl = null
-  let apiUsada = "Desconocida"
+  let videoDownloadUrl, apiUsada
 
-  const apisList = [
-    { name: "Api 1M", url: `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&quality=360&apikey=may-0595dca2` },
-    { name: "Api 2A", url: `https://api-adonix.ultraplus.click/download/ytmp4?apikey=AdonixKeyz11c2f6197&url=${encodeURIComponent(videoUrl)}&quality=360` },
-    { name: "Api 3F", url: `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}&quality=360` },
-    { name: "Api 4MY", url: `https://api-adonix.ultraplus.click/download/ytmp4?apikey=SoyMaycol<3&url=${encodeURIComponent(videoUrl)}&quality=360` },
-    { name: "Api 5K", url: `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Angelkk122&url=${encodeURIComponent(videoUrl)}&quality=360` }
+  const apis = [
+    { name: "Api 1M", url: `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&apikey=may-0595dca2` },
+    { name: "Api 2A", url: `https://api-adonix.ultraplus.click/download/ytmp4?apikey=AdonixKeyz11c2f6197&url=${encodeURIComponent(videoUrl)}` }
   ]
 
-  const tryDownloadParallel = async () => {
-    const tasks = apisList.map(api =>
-      axios.get(api.url, { timeout: 10000 })
-        .then(r => {
-          const link = r.data?.result?.url || r.data?.data?.url
-          if (r.data?.status && link) return { url: link, api: api.name }
-          throw new Error("Sin link válido")
-        })
-    )
-    return Promise.any(tasks)
+  try {
+    // ⚡ Primera API que responda válida gana
+    const winner = await Promise.any(apis.map(api => fetchApi(api.name, api.url, 8000)))
+    videoDownloadUrl = winner.url
+    apiUsada = winner.api
+  } catch (e) {
+    return conn.sendMessage(msg.key.remoteJid, { text: `⚠️ Todas las APIs fallaron:\n\n${e.message}` }, { quoted: msg })
   }
 
   try {
-    const winner = await tryDownloadParallel()
-    videoDownloadUrl = winner.url
-    apiUsada = winner.api
-
     const tmp = path.join(process.cwd(), "tmp")
     if (!fs.existsSync(tmp)) fs.mkdirSync(tmp)
     const file = path.join(tmp, `${Date.now()}_vid.mp4`)
