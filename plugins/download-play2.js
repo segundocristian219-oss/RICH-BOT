@@ -24,6 +24,25 @@ const checkSize = async (url, maxMB = MAX_FILE_SIZE_MB) => {
   }
 }
 
+const apisList = (videoUrl) => [
+  () => tryApi("Api 1M", () => `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&quality=360&apikey=may-0595dca2`),
+  () => tryApi("Api 2A", () => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=AdonixKeyz11c2f6197&url=${encodeURIComponent(videoUrl)}&quality=360`),
+  () => tryApi("Api 3F", () => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}&quality=360`),
+  () => tryApi("Api 4MY", () => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=SoyMaycol<3&url=${encodeURIComponent(videoUrl)}&quality=360`),
+  () => tryApi("Api 5K", () => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Angelkk122&url=${encodeURIComponent(videoUrl)}&quality=360`),
+  () => tryApi("Api 6Srv", () => `http://173.208.192.170/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}&quality=360`)
+]
+
+const tryApisWithRetries = async (videoUrl, attempts = 3) => {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await Promise.any(apisList(videoUrl).map(api => api()))
+    } catch (err) {
+      if (i === attempts - 1) throw new Error(`⚠️ Todas las APIs fallaron tras ${attempts} intentos:\n\n${err.message}`)
+    }
+  }
+}
+
 const handler = async (msg, { conn, text }) => {
   if (!text?.trim())
     return conn.sendMessage(msg.key.remoteJid, { text: "🎬 Ingresa el nombre de algún video" }, { quoted: msg })
@@ -38,20 +57,11 @@ const handler = async (msg, { conn, text }) => {
   const { url: videoUrl, title, timestamp: duration, author } = video
   const artista = author.name
 
-  const apis = [
-    () => tryApi("Api 1M", () => `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&quality=360&apikey=may-0595dca2`),
-    () => tryApi("Api 2A", () => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=AdonixKeyz11c2f6197&url=${encodeURIComponent(videoUrl)}&quality=360`),
-    () => tryApi("Api 3F", () => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}&quality=360`),
-    () => tryApi("Api 4MY", () => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=SoyMaycol<3&url=${encodeURIComponent(videoUrl)}&quality=360`),
-    () => tryApi("Api 5K", () => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Angelkk122&url=${encodeURIComponent(videoUrl)}&quality=360`),
-    () => tryApi("Api 6Srv", () => `http://173.208.192.170/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}&quality=360`)
-  ]
-
   let winner
   try {
-    winner = await Promise.any(apis.map(api => api()))
+    winner = await tryApisWithRetries(videoUrl, 3)
   } catch (err) {
-    return conn.sendMessage(msg.key.remoteJid, { text: `⚠️ Todas las APIs fallaron:\n\n${err.message}` }, { quoted: msg })
+    return conn.sendMessage(msg.key.remoteJid, { text: err.message }, { quoted: msg })
   }
 
   const videoDownloadUrl = winner.url
