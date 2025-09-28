@@ -26,22 +26,14 @@ const checkSize = async (url, maxMB = MAX_FILE_SIZE_MB) => {
 
 const handler = async (msg, { conn, text }) => {
   if (!text?.trim())
-    return conn.sendMessage(
-      msg.key.remoteJid,
-      { text: "🎬 Ingresa el nombre de algún video" },
-      { quoted: msg }
-    )
+    return conn.sendMessage(msg.key.remoteJid, { text: "🎬 Ingresa el nombre de algún video" }, { quoted: msg })
 
   await conn.sendMessage(msg.key.remoteJid, { react: { text: "🕒", key: msg.key } })
 
   const search = await yts({ query: text, hl: "es", gl: "MX" })
   const video = search.videos[0]
   if (!video)
-    return conn.sendMessage(
-      msg.key.remoteJid,
-      { text: "❌ No encontré resultados." },
-      { quoted: msg }
-    )
+    return conn.sendMessage(msg.key.remoteJid, { text: "❌ No encontré resultados." }, { quoted: msg })
 
   const { url: videoUrl, title, timestamp: duration, author } = video
   const artista = author.name
@@ -59,22 +51,15 @@ const handler = async (msg, { conn, text }) => {
   try {
     winner = await Promise.any(apis.map(api => api()))
   } catch (err) {
-    return conn.sendMessage(
-      msg.key.remoteJid,
-      { text: `⚠️ Todas las APIs fallaron:\n\n${err.message}` },
-      { quoted: msg }
-    )
+    return conn.sendMessage(msg.key.remoteJid, { text: `⚠️ Todas las APIs fallaron:\n\n${err.message}` }, { quoted: msg })
   }
 
   const videoDownloadUrl = winner.url
   const apiUsada = winner.api
 
-  if (!(await checkSize(videoDownloadUrl)))
-    return conn.sendMessage(
-      msg.key.remoteJid,
-      { text: "⚠️ El archivo excede el límite permitido por WhatsApp." },
-      { quoted: msg }
-    )
+  const sizeOk = await checkSize(videoDownloadUrl)
+  if (!sizeOk)
+    return conn.sendMessage(msg.key.remoteJid, { text: "⚠️ El archivo excede el límite permitido por WhatsApp." }, { quoted: msg })
 
   try {
     await conn.sendMessage(
@@ -91,10 +76,7 @@ const handler = async (msg, { conn, text }) => {
 ⭒ 🕑 𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗: ${duration}
 ⭒ 🌐 𝙰𝚙𝚒: ${apiUsada}
 
-» 𝙑𝙸𝘿𝙀𝙊 𝙀𝙉𝙑𝙄𝘼𝘿𝙊 🎧
-» 𝘿𝙄𝙎𝙁𝙍𝙐𝙏𝘼𝙇𝙊 𝘾𝘼𝙈𝙋𝙀𝙊𝙉..
-
-⇆ ㅤ◁ㅤㅤ❚❚ㅤㅤ▷ㅤ↻
+» 𝙑𝙸𝘿𝙴𝙾 𝙴𝙽𝙑𝙸𝘼𝘿𝙾 🎧
 `.trim(),
         supportsStreaming: true
       },
@@ -102,11 +84,7 @@ const handler = async (msg, { conn, text }) => {
     )
     await conn.sendMessage(msg.key.remoteJid, { react: { text: "✅", key: msg.key } })
   } catch (e) {
-    await conn.sendMessage(
-      msg.key.remoteJid,
-      { text: `⚠️ Error al enviar el video:\n\n${e.message}` },
-      { quoted: msg }
-    )
+    await conn.sendMessage(msg.key.remoteJid, { text: `⚠️ Error al enviar el video:\n\n${e.message}` }, { quoted: msg })
   }
 }
 
