@@ -77,7 +77,6 @@ handler.help = ['4vs4']
 handler.tags = ['freefire']
 handler.command = /^\.?(4vs4|vs4)$/i
 handler.group = true
-handler.botAdmin = true
 export default handler
 
 function generarVersus(escuadra, suplentes, mexText = '  ', colText = '  ') {
