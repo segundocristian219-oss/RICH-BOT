@@ -6,7 +6,7 @@ import { promisify } from "util"
 import { pipeline } from "stream"
 
 const streamPipe = promisify(pipeline)
-const MAX_FILE_SIZE = 60 * 1024 * 1024 // 60 MB
+const MAX_FILE_SIZE = 75 * 1024 * 1024 // 60 MB
 
 // Función auxiliar para probar APIs
 const tryApi = async (apiName, urlBuilder) => {
