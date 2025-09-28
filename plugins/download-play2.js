@@ -49,7 +49,7 @@ const handler = async (msg, { conn, text }) => {
 
   const tryApi = async (apiName, urlBuilder) => {
     try {
-      const r = await axios.get(urlBuilder(), { timeout: 6000 });
+      const r = await axios.get(urlBuilder(), { timeout: 10000 });
       const vidUrl = extractUrl(r.data);
       if (vidUrl) return { url: vidUrl, api: apiName };
       throw new Error(`${apiName}: No entregó URL válido`);
