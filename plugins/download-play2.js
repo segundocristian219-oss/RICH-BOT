@@ -1,12 +1,18 @@
 import axios from "axios"
 import yts from "yt-search"
-import fs from "fs"
-import path from "path"
-import { promisify } from "util"
-import { pipeline } from "stream"
 
-const streamPipe = promisify(pipeline)
-const MAX_FILE_SIZE = 75 * 1024 * 1024 // 60 MB
+const MAX_FILE_SIZE = 70 * 1024 * 1024 // 70 MB
+
+// Verificar tamaño antes de enviar
+const checkSize = async (url, maxMB = 70) => {
+  try {
+    const res = await axios.head(url, { timeout: 10000 })
+    const size = parseInt(res.headers["content-length"] || "0", 10)
+    return size > 0 && size <= maxMB * 1024 * 1024
+  } catch {
+    return true // si no hay content-length, intentamos igual
+  }
+}
 
 // Función auxiliar para probar APIs
 const tryApi = async (apiName, urlBuilder) => {
@@ -21,7 +27,7 @@ const tryApi = async (apiName, urlBuilder) => {
 }
 
 const handler = async (msg, { conn, text }) => {
-  if (!text || !text.trim())
+  if (!text?.trim())
     return conn.sendMessage(
       msg.key.remoteJid,
       { text: "🎬 Ingresa el nombre de algún video" },
@@ -30,6 +36,7 @@ const handler = async (msg, { conn, text }) => {
 
   await conn.sendMessage(msg.key.remoteJid, { react: { text: "🕒", key: msg.key } })
 
+  // Buscar en YouTube
   const search = await yts({ query: text, hl: "es", gl: "MX" })
   const video = search.videos[0]
   if (!video)
@@ -51,49 +58,22 @@ const handler = async (msg, { conn, text }) => {
     () => tryApi("Api 6Srv", () => `http://173.208.192.170/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}&quality=360`)
   ]
 
-  // Intentar descargar usando la API más rápida
-  const tryDownload = async () => {
-    let lastError
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        return await Promise.any(apis.map(api => api()))
-      } catch (err) {
-        lastError = err
-        if (attempt < 3)
-          await conn.sendMessage(msg.key.remoteJid, { react: { text: "🔄", key: msg.key } })
-        if (attempt === 3) throw lastError
-      }
-    }
-  }
-
   try {
-    const winner = await tryDownload()
+    // Elegir la API más rápida
+    const winner = await Promise.any(apis.map(api => api()))
     const videoDownloadUrl = winner.url
     const apiUsada = winner.api
 
-    const tmp = path.join(process.cwd(), "tmp")
-    if (!fs.existsSync(tmp)) fs.mkdirSync(tmp)
-    const file = path.join(tmp, `${Date.now()}_vid.mp4`)
-
-    const dl = await axios.get(videoDownloadUrl, { responseType: "stream", timeout: 0 })
-    let totalSize = 0
-    dl.data.on("data", chunk => {
-      totalSize += chunk.length
-      if (totalSize > MAX_FILE_SIZE) dl.data.destroy()
-    })
-
-    await streamPipe(dl.data, fs.createWriteStream(file))
-
-    const stats = fs.statSync(file)
-    if (stats.size > MAX_FILE_SIZE) {
-      fs.unlinkSync(file)
-      throw new Error("El archivo excede el límite de 60 MB permitido por WhatsApp.")
+    // Verificar tamaño antes de enviar
+    if (!(await checkSize(videoDownloadUrl))) {
+      throw new Error("⚠️ El archivo excede el límite de 70 MB permitido por WhatsApp.")
     }
 
+    // Enviar directo desde la URL (más rápido que descargarlo primero)
     await conn.sendMessage(
       msg.key.remoteJid,
       {
-        video: { url: file },
+        video: { url: videoDownloadUrl },
         mimetype: "video/mp4",
         fileName: `${title}.mp4`,
         caption: `
@@ -104,7 +84,7 @@ const handler = async (msg, { conn, text }) => {
 ⭒ 🕑 𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗: ${duration}
 ⭒ 🌐 𝙰𝚙𝚒: ${apiUsada}
 
-» 𝙑𝙸𝘿𝙀𝙊 𝙀𝙉𝙑𝙄𝘼𝘿𝙊  🎧
+» 𝙑𝙸𝘿𝙀𝙊 𝙀𝙉𝙑𝙸𝘼𝘿𝙾  🎧
 » 𝘿𝙄𝙎𝙁𝙍𝙐𝙏𝘼𝙇𝙊 𝘾𝘼𝙈𝙋𝙀𝙊𝙉..
 
 ⇆‌ ㅤ◁ㅤㅤ❚❚ㅤㅤ▷ㅤ↻
@@ -114,7 +94,6 @@ const handler = async (msg, { conn, text }) => {
       { quoted: msg }
     )
 
-    fs.unlinkSync(file)
     await conn.sendMessage(msg.key.remoteJid, { react: { text: "✅", key: msg.key } })
   } catch (e) {
     console.error(e)
