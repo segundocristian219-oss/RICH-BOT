@@ -41,7 +41,7 @@ const handler = async (msg, { conn, text }) => {
 
     const results = await Promise.allSettled(
       apis.map(api =>
-        axios.get(api.url, { timeout: 8000 })
+        axios.get(api.url, { timeout: 10000 })
           .then(r => {
             const link = r.data?.result?.url || r.data?.data?.url
             if (r.data?.status && link) {
