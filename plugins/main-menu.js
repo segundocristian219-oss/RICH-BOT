@@ -1,7 +1,7 @@
 const handler = async (m, { conn }) => {
   let menu = `👋🏻 𝖧𝗈𝗅𝖺! 𝖻𝗂𝖾𝗇𝗏𝖾𝗇𝗂𝖽𝗈 𝖺𝗅 𝗆𝖾𝗇𝗎𝗀𝗋𝗎𝗉𝗈 𝖽𝖾 *𝖻𝖺𝗄𝗂-𝖡𝗈𝗍 𝖨𝖠* 𝖺𝗾𝗎𝗂́ 𝖾𝗇𝖼𝗈𝗇𝗍𝗋𝖺𝗋𝖺́𝗌 𝗅𝗈𝗌 𝖼𝗈𝗆𝖺𝗇𝖽𝗈𝗌 𝗉𝖺𝗋𝖺 𝗆𝖺𝗇𝗍𝖾𝗇𝖾𝗋 𝗎𝗇 𝗍𝗈𝗍𝖺𝗅 𝗈𝗋𝖽𝖾𝗇 𝖽𝖾 𝗍𝗎́ 𝗀𝗋𝗎𝗉𝗈!
 
-*𐚁 ֹ ִ `\𝖨𝗇𝖿𝗈𝗋𝗆𝖺𝖼𝗂𝗈𝗇`\ ୧❕ ֹ ִ*
+*𐚁 ֹ ִ *𝖨𝗇𝖿𝗈𝗋𝗆𝖺𝖼𝗂𝗈𝗇* ୧❕ ֹ ִ*
   ৎ٠࣪⭑☕𝄢 -mylid
   ৎ٠࣪⭑☕𝄢 -horario
   ৎ٠࣪⭑☕𝄢 -info
@@ -12,13 +12,13 @@ const handler = async (m, { conn }) => {
   ৎ٠࣪⭑☕𝄢 -uptime
   ৎ٠࣪⭑☕𝄢 -verlid
 
-*𐚁 ֹ ִ `𝖬𝖾𝗇𝗎𝗌 𝖽𝗂𝗌𝗉𝗈𝗇𝗂𝖻𝗅𝖾𝗌` ୧📋 ֹ ִ*
+*𐚁 ֹ ִ *𝖬𝖾𝗇𝗎𝗌 𝖽𝗂𝗌𝗉𝗈𝗇𝗂𝖻𝗅𝖾𝗌* ୧📋 ֹ ִ*
   ৎ٠࣪⭑🍄𝄢 -menu
   ৎ٠࣪⭑🍄𝄢 -menuff
   ৎ٠࣪⭑🍄𝄢 -menugrupo
   ৎ٠࣪⭑🍄𝄢 -menujuegos
 
-*𐚁 ֹ ִ `𝖯𝖺𝗋𝖺 𝗀𝗋𝗎𝗉𝗈𝗌` ୧👥 ֹ ִ*
+*𐚁 ֹ ִ *𝖯𝖺𝗋𝖺 𝗀𝗋𝗎𝗉𝗈𝗌* ୧👥 ֹ ִ*
   ৎ٠࣪⭑🍜𝄢 -abrirgrupo
   ৎ٠࣪⭑🍜𝄢 -antiarabe
   ৎ٠࣪⭑🍜𝄢 -antidelete
@@ -58,7 +58,7 @@ const handler = async (m, { conn }) => {
   ৎ٠࣪⭑🍜𝄢 -unmute
   ৎ٠࣪⭑🍜𝄢 -welcome
 
-*𐚁 ֹ ִ `𝖯𝖺𝗋𝖺 𝖥𝗋𝖾𝖾 𝖥𝗂𝗋𝖾` ୧👺 ֹ ִ*
+*𐚁 ֹ ִ *𝖯𝖺𝗋𝖺 𝖥𝗋𝖾𝖾 𝖥𝗂𝗋𝖾* ୧👺 ֹ ִ*
   ৎ٠࣪⭑🎮𝄢 -vs4
   ৎ٠࣪⭑🎮𝄢 -vs6
   ৎ٠࣪⭑🎮𝄢 -agendaff
@@ -74,7 +74,7 @@ const handler = async (m, { conn }) => {
   ৎ٠࣪⭑🎮𝄢 -hexagonalsur
   ৎ٠࣪⭑🎮𝄢 -trilaterosur
 
-*𐚁 ֹ ִ `𝖣𝖾𝗌𝖼𝖺𝗋𝗀𝖺𝖽𝗈𝗋𝖾𝗌` ୧📥 ֹ ִ*
+*𐚁 ֹ ִ *𝖣𝖾𝗌𝖼𝖺𝗋𝗀𝖺𝖽𝗈𝗋𝖾𝗌* ୧📥 ֹ ִ*
   ৎ٠࣪⭑🌴𝄢 -facebook
   ৎ٠࣪⭑🌴𝄢 -instagram
   ৎ٠࣪⭑🌴𝄢 -mediafire
@@ -90,7 +90,7 @@ const handler = async (m, { conn }) => {
   ৎ٠࣪⭑🌴𝄢 -ytmp3
   ৎ٠࣪⭑🌴𝄢 -ytmp4
 
-*𐚁 ֹ ִ `𝖧𝖾𝗋𝗋𝖺𝗆𝗂𝖾𝗇𝗍𝖺𝗌` ୧🛠 ֹ ִ*
+*𐚁 ֹ ִ *𝖧𝖾𝗋𝗋𝖺𝗆𝗂𝖾𝗇𝗍𝖺𝗌* ୧🛠 ֹ ִ*
   ৎ٠࣪⭑🔧𝄢 -perfilgroup
   ৎ٠࣪⭑🔧𝄢 -ff
   ৎ٠࣪⭑🔧𝄢 -ff2
@@ -103,7 +103,7 @@ const handler = async (m, { conn }) => {
   ৎ٠࣪⭑🔧𝄢 -toimg
   ৎ٠࣪⭑🔧𝄢 -tovideo
 
-*𐚁 ֹ ִ `𝖬𝗂𝗇𝗂 𝖩𝗎𝖾𝗀𝗈𝗌` ୧🎮 ֹ ִ*
+*𐚁 ֹ ִ *𝖬𝗂𝗇𝗂 𝖩𝗎𝖾𝗀𝗈𝗌* ୧🎮 ֹ ִ*
   ৎ٠࣪⭑🧩𝄢 -acertijo
   ৎ٠࣪⭑🧩𝄢 -cachuda
   ৎ٠࣪⭑🧩𝄢 -cachudo
@@ -138,7 +138,7 @@ const handler = async (m, { conn }) => {
   ৎ٠࣪⭑🧩𝄢 -pegar
   ৎ٠࣪⭑🧩𝄢 -verdad
 
-*𐚁 ֹ ִ `𝖨𝖠` ୧🫀 ֹ ִ*
+*𐚁 ֹ ִ *𝖨𝖠* ୧🫀 ֹ ִ*
   ৎ٠࣪⭑🔍𝄢 -dalle
   ৎ٠࣪⭑🔍𝄢 -gemini
   ৎ٠࣪⭑🔍𝄢 -iavoz
@@ -149,7 +149,7 @@ const handler = async (m, { conn }) => {
   ৎ٠࣪⭑🔍𝄢 -visión
   ৎ٠࣪⭑🔍𝄢 -vision2
 
-*𐚁 ֹ ִ `𝖲𝗍𝗂𝖼𝗄𝖾𝗋𝗌` ୧🎭 ֹ ִ*
+*𐚁 ֹ ִ *𝖲𝗍𝗂𝖼𝗄𝖾𝗋𝗌* ୧🎭 ֹ ִ*
   ৎ٠࣪⭑🎨𝄢 -tourl
   ৎ٠࣪⭑🎨𝄢 -addco
   ৎ٠࣪⭑🎨𝄢 -delco
@@ -161,7 +161,7 @@ const handler = async (m, { conn }) => {
   ৎ٠࣪⭑🎨𝄢 -s
   ৎ٠࣪⭑🎨𝄢 -texto
 
-*𐚁 ֹ ִ `𝖯𝖺𝗋𝖺 𝖾𝗅 𝖼𝗋𝖾𝖺𝖽𝗈𝗋` ୧👑 ֹ ִ*
+*𐚁 ֹ ִ *𝖯𝖺𝗋𝖺 𝖾𝗅 𝖼𝗋𝖾𝖺𝖽𝗈𝗋* ୧👑 ֹ ִ*
   ৎ٠࣪⭑👨🏻‍💻𝄢 -tiempo
   ৎ٠࣪⭑👨🏻‍💻𝄢 -addlista
   ৎ٠࣪⭑👨🏻‍💻𝄢 -addowner
