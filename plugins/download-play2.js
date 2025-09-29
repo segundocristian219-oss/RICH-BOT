@@ -32,27 +32,13 @@ const handler = async (m, { conn, text }) => {
       artista = video.author?.name || "Desconocido"
     }
 
-    // ⚡ APIs en paralelo → solo AdonixAPI y Adofreekey
-    const apiPromises = [
-      (async () => {
-        const url = `https://api-adonix.ultraplus.click/download/ytmp4?apikey=AdonixKeyz11c2f6197&url=${encodeURIComponent(videoUrl)}`
-        const res = await axios.get(url, { timeout: 12000 })
-        const link = res.data?.result?.url || res.data?.data?.url
-        if (!res.data?.status || !link) throw new Error("AdonixAPI falló")
-        return { url: link, api: "AdonixAPI" }
-      })(),
-      (async () => {
-        const url = `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}`
-        const res = await axios.get(url, { timeout: 12000 })
-        const link = res.data?.result?.url || res.data?.data?.url
-        if (!res.data?.status || !link) throw new Error("Adofreekey falló")
-        return { url: link, api: "Adofreekey" }
-      })()
-    ]
-
-    const winnerApi = await Promise.any(apiPromises)
-    let videoDownloadUrl = winnerApi.url
-    let apiUsada = winnerApi.api
+    // ⚡ Solo MyAPI
+    const apiUrl = `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&quality=360&apikey=may-0595dca2`
+    const res = await axios.get(apiUrl, { timeout: 15000 })
+    const link = res.data?.result?.url || res.data?.data?.url
+    if (!res.data?.status || !link) throw new Error("MyAPI falló")
+    let videoDownloadUrl = link
+    const apiUsada = "MyAPI"
 
     // ⚠️ Validar que sea mp4
     const head = await axios.head(videoDownloadUrl).catch(() => null)
