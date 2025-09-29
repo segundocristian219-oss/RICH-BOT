@@ -39,19 +39,20 @@ const handler = async (msg, { conn, text }) => {
       { name: "Adofreekey", url: `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}` }
     ]
 
-    const results = await Promise.allSettled(
+    return Promise.any(
       apis.map(api =>
-        axios.get(api.url, { timeout: 10000 })
+        axios.get(api.url, { timeout: 12000 })
           .then(r => {
-            const link = r.data?.result?.url || r.data?.data?.url
-            if (link) return { url: link, api: api.name }
-            return null
+            let link = r.data?.result?.url || r.data?.data?.url
+            if (!link) {
+              const values = Object.values(r.data).flatMap(v => typeof v === 'string' ? [v] : [])
+              link = values.find(Boolean)
+            }
+            if (!link) throw new Error("Sin link válido")
+            return { url: link, api: api.name }
           })
-          .catch(() => null)
       )
     )
-
-    return results.filter(r => r.status === "fulfilled" && r.value).map(r => r.value)
   }
 
   const downloadAndSend = async (url, api) => {
@@ -107,27 +108,9 @@ const handler = async (msg, { conn, text }) => {
   }
 
   try {
-    const candidates = await tryDownloadParallel()
-    if (candidates.length === 0) throw new Error("No se pudo descargar con ninguna API.")
-
-    let success = false
-    for (let i = 0; i < candidates.length; i++) {
-      try {
-        if (i > 0) {
-          await conn.sendMessage(msg.key.remoteJid, { react: { text: "🏜️", key: msg.key } })
-        }
-        await downloadAndSend(candidates[i].url, candidates[i].api)
-        success = true
-        break
-      } catch (err) {
-        console.error(`Fallo con ${candidates[i].api}:`, err.message)
-      }
-    }
-
-    if (!success) throw new Error("No se pudo descargar con ninguna API.")
-
+    const winner = await tryDownloadParallel()
+    await downloadAndSend(winner.url, winner.api)
     await conn.sendMessage(msg.key.remoteJid, { react: { text: "✅", key: msg.key } })
-
   } catch (e) {
     console.error(e)
     await conn.sendMessage(
