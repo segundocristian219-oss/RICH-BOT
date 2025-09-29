@@ -16,16 +16,7 @@ let handler = async (m, { conn, text }) => {
     if (Buffer.isBuffer(e)) stiker = e
   } finally {
     if (stiker) {
-      await conn.sendFile(m.chat, stiker, 'wm.webp', '', m, false, {
-        contextInfo: {
-          externalAdReply: {
-            title: "𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃",
-            body: "",
-            thumbnailUrl: "https://cdn.russellxz.click/db92b9a2.jpeg",
-            sourceUrl: ""
-          }
-        }
-      })
+      await conn.sendFile(m.chat, stiker, 'wm.webp', '', m)
     } else {
       return m.reply(`⭐ Responde al Sticker.`)
     }
@@ -34,5 +25,6 @@ let handler = async (m, { conn, text }) => {
 
 handler.help = ['wm <nombre>|<autor>']
 handler.tags = ['sticker']
-handler.command = /^(take|robar|wm)$/i 
+handler.command = /^(take|robar|wm)$/i
+
 export default handler
