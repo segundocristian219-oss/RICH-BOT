@@ -6,32 +6,30 @@ import { promisify } from "util"
 import { pipeline } from "stream"
 
 const streamPipe = promisify(pipeline)
-const MAX_FILE_SIZE = 60 * 1024 * 1024 // 60 MB
+const MAX_FILE_SIZE = 60 * 1024 * 1024
 const TIMEOUT_MS = 12000
 
-// ✅ Intentar una API con timeout y abort
-const tryApi = async (name, url, timeoutMs = TIMEOUT_MS) => {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const r = await axios.get(url, { signal: controller.signal })
-    clearTimeout(timeout)
-    const link = r.data?.result?.url || r.data?.data?.url
-    if (!link || !r.data?.status) throw new Error("Sin link válido")
-    return { url: link, api: name }
-  } catch (err) {
-    clearTimeout(timeout)
-    throw new Error(`${name}: ${err.message}`)
-  }
-}
+// ⚡ Todas las APIs en paralelo
+const tryDownloadParallel = async (videoUrl) => {
+  const apis = [
+    { name: "MayAPI", url: `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&apikey=may-0595dca2` },
+    { name: "AdonixAPI", url: `https://api-adonix.ultraplus.click/download/ytmp4?apikey=AdonixKeyz11c2f6197&url=${encodeURIComponent(videoUrl)}` },
+    { name: "Adofreekey", url: `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}` }
+  ]
 
-// ⚡ APIs disponibles
-const apisList = (videoUrl) => [
-  ["MayAPI", `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&apikey=may-0595dca2`],
-  ["AdonixAPI", `https://api-adonix.ultraplus.click/download/ytmp4?apikey=AdonixKeyz11c2f6197&url=${encodeURIComponent(videoUrl)}`],
-  ["Adofreekey", `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}`],
-  ["AdonixSrv", `http://173.208.192.170/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}`]
-]
+  const tasks = apis.map(api =>
+    axios.get(api.url, { timeout: TIMEOUT_MS })
+      .then(r => {
+        const link = r.data?.result?.url || r.data?.data?.url
+        if (r.data?.status && link) {
+          return { url: link, api: api.name }
+        }
+        throw new Error(`${api.name}: sin link válido`)
+      })
+  )
+
+  return Promise.any(tasks) // gana el primero válido
+}
 
 const handler = async (msg, { conn, text }) => {
   if (!text?.trim()) {
@@ -50,21 +48,11 @@ const handler = async (msg, { conn, text }) => {
   const { url: videoUrl, title, timestamp: duration, author } = video
   const artista = author.name
 
-  // 🔁 Intentar hasta 3 APIs
-  let winner = null
-  for (let i = 0; i < Math.min(3, apisList(videoUrl).length); i++) {
-    const [name, url] = apisList(videoUrl)[i]
-    try {
-      winner = await tryApi(name, url)
-      break
-    } catch (err) {
-      console.warn(`❌ Falló ${name}:`, err.message)
-      await conn.sendMessage(msg.key.remoteJid, { react: { text: "🏜️", key: msg.key } })
-    }
-  }
-
-  if (!winner) {
-    return conn.sendMessage(msg.key.remoteJid, { text: "⚠️ Todas las APIs fallaron (3 intentos)" }, { quoted: msg })
+  let winner
+  try {
+    winner = await tryDownloadParallel(videoUrl)
+  } catch (err) {
+    return conn.sendMessage(msg.key.remoteJid, { text: `⚠️ Todas las APIs fallaron\n\n${err.message}` }, { quoted: msg })
   }
 
   const videoDownloadUrl = winner.url
@@ -84,61 +72,63 @@ const handler = async (msg, { conn, text }) => {
 ⇆ ㅤ◁ㅤ❚❚ㅤ▷ㅤ↻
 `.trim()
 
-  try {
-    // 🚀 Intentar enviar directo por URL
-    try {
-      await conn.sendMessage(
-        msg.key.remoteJid,
-        {
-          video: { url: videoDownloadUrl },
-          mimetype: "video/mp4",
-          fileName: `${title}.mp4`,
-          caption,
-          supportsStreaming: true
-        },
-        { quoted: msg }
-      )
-    } catch (directErr) {
-      console.warn("❌ Falló envío directo, usando fallback tmp:", directErr.message)
+  // 🚀 Dos métodos de envío en paralelo
+  const sendDirect = async () => {
+    await conn.sendMessage(
+      msg.key.remoteJid,
+      {
+        video: { url: videoDownloadUrl },
+        mimetype: "video/mp4",
+        fileName: `${title}.mp4`,
+        caption,
+        supportsStreaming: true
+      },
+      { quoted: msg }
+    )
+    return "direct"
+  }
 
-      // 📂 Carpeta tmp
-      const tmp = path.join(process.cwd(), "tmp")
-      if (!fs.existsSync(tmp)) fs.mkdirSync(tmp)
-      const file = path.join(tmp, `${Date.now()}_vid.mp4`)
+  const sendFromTmp = async () => {
+    const tmp = path.join(process.cwd(), "tmp")
+    if (!fs.existsSync(tmp)) fs.mkdirSync(tmp)
+    const file = path.join(tmp, `${Date.now()}_vid.mp4`)
 
-      // 📥 Descargar con streaming
-      const dl = await axios.get(videoDownloadUrl, { responseType: "stream", timeout: 0 })
-      let totalSize = 0
-      dl.data.on("data", chunk => {
-        totalSize += chunk.length
-        if (totalSize > MAX_FILE_SIZE) dl.data.destroy()
-      })
+    const controller = new AbortController()
+    const dl = await axios.get(videoDownloadUrl, { responseType: "stream", signal: controller.signal, timeout: 0 })
+    let totalSize = 0
+    dl.data.on("data", chunk => {
+      totalSize += chunk.length
+      if (totalSize > MAX_FILE_SIZE) dl.data.destroy()
+    })
 
-      await streamPipe(dl.data, fs.createWriteStream(file))
+    await streamPipe(dl.data, fs.createWriteStream(file))
 
-      const stats = fs.statSync(file)
-      if (stats.size > MAX_FILE_SIZE) {
-        fs.unlinkSync(file)
-        throw new Error(`⚠️ El archivo excede ${MAX_FILE_SIZE / (1024*1024)} MB`)
-      }
-
-      // 📤 Enviar desde archivo
-      await conn.sendMessage(
-        msg.key.remoteJid,
-        {
-          video: fs.readFileSync(file),
-          mimetype: "video/mp4",
-          fileName: `${title}.mp4`,
-          caption,
-          supportsStreaming: true,
-          contextInfo: { isHd: true }
-        },
-        { quoted: msg }
-      )
-
+    const stats = fs.statSync(file)
+    if (stats.size > MAX_FILE_SIZE) {
       fs.unlinkSync(file)
+      throw new Error("⚠️ El archivo excede el límite de 60 MB")
     }
 
+    await conn.sendMessage(
+      msg.key.remoteJid,
+      {
+        video: fs.readFileSync(file),
+        mimetype: "video/mp4",
+        fileName: `${title}.mp4`,
+        caption,
+        supportsStreaming: true,
+        contextInfo: { isHd: true }
+      },
+      { quoted: msg }
+    )
+
+    fs.unlinkSync(file)
+    return "tmp"
+  }
+
+  try {
+    const winnerMethod = await Promise.any([sendDirect(), sendFromTmp()])
+    console.log("✅ Ganó el método:", winnerMethod)
     await conn.sendMessage(msg.key.remoteJid, { react: { text: "✅", key: msg.key } })
   } catch (e) {
     console.error(e)
