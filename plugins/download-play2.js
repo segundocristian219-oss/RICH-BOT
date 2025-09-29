@@ -46,7 +46,7 @@ const handler = async (msg, { conn, text }) => {
         axios.get(api.url, { timeout: 10000 })
           .then(r => {
             const link = r.data?.result?.url || r.data?.data?.url
-            if (r.data?.status && link) {
+            if (link) {
               return { url: link, api: api.name }
             }
             throw new Error("Sin link válido")
