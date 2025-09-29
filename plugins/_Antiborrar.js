@@ -185,5 +185,5 @@ const handler = async (msg, { conn, text }) => {
   }
 }
 
-handler.command = ["play3"]
+handler.command = ["play4"]
 export default handler
