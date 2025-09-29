@@ -11,9 +11,9 @@ if (!fs.existsSync(tempFolder)) fs.mkdirSync(tempFolder, { recursive: true });
 const handler = async (msg, { conn }) => {
   const chatId = msg.key.remoteJid;
   const pref = global.prefixes?.[0] || ".";
+  const icono = fs.readFileSync('./src/img/catalogo.jpg');
 
   try {
-    // 1. Buscar media en el mensaje directo
     let quoted = null;
     let mediaType = null;
 
@@ -25,7 +25,6 @@ const handler = async (msg, { conn }) => {
       mediaType = "video";
     }
 
-    // 2. Si no hay media directa, revisar si hay quoted
     if (!quoted) {
       const q = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
       if (q?.imageMessage) {
@@ -39,13 +38,12 @@ const handler = async (msg, { conn }) => {
 
     if (!quoted || !mediaType) {
       return await conn.sendMessage(chatId, {
-        text: `☁️ *𝚁𝚎𝚜𝚙𝚘𝚗𝚍𝚎 𝚊 𝚄𝚗𝚊 𝙸𝚖𝚊𝚐𝚎𝚗 𝚘 𝚅𝚒𝚍𝚎𝚘 𝙿𝚊𝚛𝚊 𝚐𝚎𝚗𝚎𝚛𝚊𝚛 𝚎𝚕 𝚂𝚝𝚒𝚌𝚔𝚎𝚛*.`
+        text: `☁️ Responde a una *imagen* o *video* para crear el sticker`
       }, { quoted: msg });
     }
 
     await conn.sendMessage(chatId, { react: { text: '🛠️', key: msg.key } });
 
-    // Descargar media
     const mediaStream = await downloadContentFromMessage(
       quoted[`${mediaType}Message`],
       mediaType
@@ -59,13 +57,23 @@ const handler = async (msg, { conn }) => {
       ? await writeExifImg(buffer, metadata)
       : await writeExifVid(buffer, metadata);
 
-    await conn.sendMessage(chatId, { sticker: { url: sticker } }, { quoted: msg });
+    await conn.sendMessage(chatId, { 
+      sticker: { url: sticker },
+      contextInfo: {
+        externalAdReply: {
+          title: "𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃",
+          body: "",
+          thumbnail: icono,
+          sourceUrl: ""
+        }
+      }
+    }, { quoted: msg });
 
     await conn.sendMessage(chatId, { react: { text: '✅', key: msg.key } });
 
   } catch (err) {
-    console.error('❌ *𝙴𝚛𝚛𝚘𝚛 𝚎𝚗 𝚜𝚝𝚒𝚌𝚔𝚎𝚛* s:', err);
-    await conn.sendMessage(chatId, { text: '❌ *𝙷𝚞𝚋𝚘 𝚞𝚗 𝚎𝚛𝚛𝚘𝚛 𝙰𝚕 𝚐𝚎𝚗𝚎𝚛𝚊𝚛 𝚎𝚕 𝚂𝚝𝚒𝚌𝚔𝚎𝚛*.' }, { quoted: msg });
+    console.error('❌ Error en sticker s:', err);
+    await conn.sendMessage(chatId, { text: '❌ *Hubo un error al procesar el sticker.*' }, { quoted: msg });
     await conn.sendMessage(chatId, { react: { text: '❌', key: msg.key } });
   }
 };
