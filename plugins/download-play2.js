@@ -6,7 +6,7 @@ import { promisify } from "util"
 import { pipeline } from "stream"
 
 const streamPipe = promisify(pipeline)
-const MAX_FILE_SIZE = 60 * 1024 * 1024
+const MAX_FILE_SIZE = 60 * 1024 * 1024 // 60 MB máximo permitido por WhatsApp
 
 const handler = async (msg, { conn, text }) => {
   if (!text || !text.trim()) {
@@ -19,6 +19,7 @@ const handler = async (msg, { conn, text }) => {
 
   await conn.sendMessage(msg.key.remoteJid, { react: { text: "🕒", key: msg.key } })
 
+  // 🔎 Buscar en YouTube
   const search = await yts({ query: text, hl: "es", gl: "MX" })
   const video = search.videos[0]
   if (!video) {
@@ -32,6 +33,7 @@ const handler = async (msg, { conn, text }) => {
   const { url: videoUrl, title, timestamp: duration, author } = video
   const artista = author.name
 
+  // 🔹 Intentar con las APIs
   const tryDownloadParallel = async () => {
     const apis = [
       { name: "MayAPI", url: `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&apikey=may-0595dca2` },
@@ -55,6 +57,7 @@ const handler = async (msg, { conn, text }) => {
     return results.filter(r => r.status === "fulfilled").map(r => r.value)
   }
 
+  // 🔹 Descargar y enviar el video
   const downloadAndSend = async (url, api) => {
     const tmp = path.join(process.cwd(), "tmp")
     if (!fs.existsSync(tmp)) fs.mkdirSync(tmp)
@@ -86,12 +89,12 @@ const handler = async (msg, { conn, text }) => {
         caption: `
 > 𝚅𝙸𝙳𝙴𝙾 𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳𝙴𝚁
 
-⭒ ִֶָ७ ꯭🎵˙⋆｡ - 𝚃𝚒́𝚝𝚞𝚕𝚘: ${title}
-⭒ ִֶָ७ ꯭🎤˙⋆｡ - 𝙰𝚛𝚝𝚒𝚜𝚝𝚊: ${artista}
-⭒ ִֶָ७ ꯭🕑˙⋆｡ - 𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗: ${duration}
-⭒ ִֶָ७ ꯭🌐˙⋆｡ - 𝙰𝚙𝚒: ${api}
+⭒ ִֶָ७ ꯭🎵 - 𝚃𝚒́𝚝𝚞𝚕𝚘: ${title}
+⭒ ִֶָ७ ꯭🎤 - 𝙰𝚛𝚝𝚒𝚜𝚝𝚊: ${artista}
+⭒ ִֶָ७ ꯭🕑 - 𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗: ${duration}
+⭒ ִֶָ७ ꯭🌐 - 𝙰𝚙𝚒: ${api}
 
-» 𝙑𝙸𝘿𝙀𝙊 𝙀𝙽𝙑𝙄𝘼𝘿𝙊  🎧
+» 𝙑𝙄𝘿𝙀𝙊 𝙀𝙉𝙑𝙄𝘼𝘿𝙊 🎧
 » 𝘿𝙄𝙎𝙁𝙍𝙐𝙏𝘼𝙇𝙊 𝘾𝘼𝙈𝙋𝙀𝙊𝙉..
 
 ⇆‌ ㅤ◁ㅤㅤ❚❚ㅤㅤ▷ㅤ↻
