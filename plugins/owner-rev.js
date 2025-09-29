@@ -25,6 +25,6 @@ let handler = async (m, { conn }) => {
 handler.command = /^rev$/i
 handler.help = ['checkplugins']
 handler.tags = ['owner']
-handler.rowner = true // solo owner
+handler.owner = true // solo owner
 
 export default handler
