@@ -31,10 +31,11 @@ const handler = async (msg, { conn, text }) => {
 
   const { url: videoUrl, title, timestamp: duration, author } = video
   const artista = author.name
-  const posibles ["1080p","720p","480p","360p","240p","144p"]
+  const posibles = ["1080p","720p","480p","360p","240p","144p"]
 
   let videoDownloadUrl = null
   let apiUsada = "Desconocida"
+  let calidadElegida = "Desconocida"
 
   const tryDownload = async () => {
     let winner = null
@@ -53,6 +54,7 @@ const handler = async (msg, { conn, text }) => {
                 resolve({
                   url: r.data.result?.url || r.data.data?.url,
                   api: apiName,
+                  calidad: q,
                   controller
                 })
                 return
@@ -88,6 +90,7 @@ const handler = async (msg, { conn, text }) => {
     const winner = await tryDownload()
     videoDownloadUrl = winner.url
     apiUsada = winner.api
+    calidadElegida = winner.calidad
 
     // Plan A: Enviar directo con URL
     try {
@@ -100,11 +103,11 @@ const handler = async (msg, { conn, text }) => {
           caption: `
 > *𝚈𝚃𝙼𝙿4 𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳𝙴𝚁*
 
-⭒ ִֶָ७ ꯭🎵˙⋆｡ - *𝚃𝚒́𝚝𝚞𝚕𝚘:* ${title}
-⭒ ִֶָ७ ꯭🎤˙⋆｡ - *𝙰𝚛𝚝𝚒𝚜𝚝𝚊:* ${artista}
-⭒ ִֶָ७ ꯭🕑˙⋆｡ - *𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗:* ${duration}
-⭒ ִֶָ७ ꯭📺˙⋆｡ - *𝙲𝚊𝚕𝚒𝚍𝚊𝚍:* ${calidadElegida}
-⭒ ִֶָ७ ꯭🌐˙⋆｡ - *𝙰𝚙𝚒:* ${apiUsada}
+⭒ ִֶָ७ ꯭🎵 - *𝚃𝚒́𝚝𝚞𝚕𝚘:* ${title}
+⭒ ִֶָ७ ꯭🎤 - *𝙰𝚛𝚝𝚒𝚜𝚝𝚊:* ${artista}
+⭒ ִֶָ७ ꯭🕑 - *𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗:* ${duration}
+⭒ ִֶָ७ ꯭📺 - *𝙲𝚊𝚕𝚒𝚍𝚊𝚍:* ${calidadElegida}
+⭒ ִֶָ७ ꯭🌐 - *𝙰𝚙𝚒:* ${apiUsada}
 
 » 𝙑𝙄𝘿𝙀𝙊 𝙀𝙉𝙑𝙄𝘼𝘿𝙊  🎧
 » 𝘿𝙄𝙎𝙁𝙍𝙐𝙏𝘼𝙇𝙊 𝘾𝘼𝙈𝙋𝙀𝙊𝙉..
@@ -153,11 +156,11 @@ const handler = async (msg, { conn, text }) => {
         caption: `
 > *𝚈𝚃𝙼𝙿4 𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳𝙴𝚁*
 
-⭒ ִֶָ७ ꯭🎵˙⋆｡ - *𝚃𝚒́𝚝𝚞𝚕𝚘:* ${title}
-⭒ ִֶָ७ ꯭🎤˙⋆｡ - *𝙰𝚛𝚝𝚒𝚜𝚝𝚊:* ${artista}
-⭒ ִֶָ७ ꯭🕑˙⋆｡ - *𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗:* ${duration}
-⭒ ִֶָ७ ꯭📺˙⋆｡ - *𝙲𝚊𝚕𝚒𝚍𝚊𝚍:* ${calidadElegida}
-⭒ ִֶָ७ ꯭🌐˙⋆｡ - *𝙰𝚙𝚒:* ${apiUsada}
+⭒ ִֶָ७ ꯭🎵 - *𝚃𝚒́𝚝𝚞𝚕𝚘:* ${title}
+⭒ ִֶָ७ ꯭🎤 - *𝙰𝚛𝚝𝚒𝚜𝚝𝚊:* ${artista}
+⭒ ִֶָ७ ꯭🕑 - *𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗:* ${duration}
+⭒ ִֶָ७ ꯭📺 - *𝙲𝚊𝚕𝚒𝚍𝚊𝚍:* ${calidadElegida}
+⭒ ִֶָ७ ꯭🌐 - *𝙰𝚙𝚒:* ${apiUsada}
 
 » 𝙑𝙄𝘿𝙀𝙊 𝙀𝙉𝙑𝙄𝘼𝘿𝙊  🎧
 » 𝘿𝙄𝙎𝙁𝙍𝙐𝙏𝘼𝙇𝙊 𝘾𝘼𝙈𝙋𝙀𝙊𝙉..
