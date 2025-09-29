@@ -1,5 +1,4 @@
 import { addExif } from '../lib/sticker.js'
-import fs from "fs"
 
 let handler = async (m, { conn, text }) => {
   if (!m.quoted) return m.reply(`⭐ Responde al Sticker.`)
@@ -17,13 +16,12 @@ let handler = async (m, { conn, text }) => {
     if (Buffer.isBuffer(e)) stiker = e
   } finally {
     if (stiker) {
-      let icono = fs.readFileSync('./src/img/catalogo.jpg')
       await conn.sendFile(m.chat, stiker, 'wm.webp', '', m, false, {
         contextInfo: {
           externalAdReply: {
             title: "𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃",
             body: "",
-            thumbnail: icono,
+            thumbnailUrl: "https://cdn.russellxz.click/db92b9a2.jpeg",
             sourceUrl: ""
           }
         }
