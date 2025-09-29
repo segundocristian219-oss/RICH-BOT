@@ -94,6 +94,6 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
 handler.help = ["play2"]
 handler.tags = ["downloader"]
-handler.command = /^play3$/i
+handler.command = /^play2$/i
 
 export default handler
