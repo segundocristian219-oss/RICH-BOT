@@ -32,8 +32,8 @@ let handler = async (m, { conn, text }) => {
   if (!/webp/.test(mime)) return m.reply('✿ Responde a un sticker para cambiarle el WM')
 
   let [packname, author] = text.split('|').map(v => v.trim())
-  if (!packname) packname = '[★] MaycolPlus'
-  if (!author) author = 'By SoyMaycol'
+  if (!packname) packname = ''
+  if (!author) author = ''
 
   let media = await q.download()
   let buffer = await addExif(media, packname, author)
