@@ -141,10 +141,25 @@ export async function handler(chatUpdate) {
         if (chat.primaryBot && chat.primaryBot !== this.user.jid && m.sender !== this.user.jid) return
 
         const detectwhat = m.sender.includes('@lid') ? '@lid' : '@s.whatsapp.net'
-        const isROwner = [...global.owner.map(([number]) => number)].map(v => v.replace(/[^0-9]/g, '') + detectwhat).includes(m.sender)
+
+        // 🔹 Aseguramos que los arrays existan
+        const owners = Array.isArray(global.owner) ? global.owner : []
+        const mods   = Array.isArray(global.mods) ? global.mods : []
+        const prems  = Array.isArray(global.prems) ? global.prems : []
+
+        const isROwner = owners
+          .map(([number]) => number)
+          .map(v => v.replace(/[^0-9]/g, '') + detectwhat)
+          .includes(m.sender)
+
         const isOwner = isROwner || m.fromMe
-        const isMods = isROwner || global.mods.map(v => v.replace(/[^0-9]/g, '') + detectwhat).includes(m.sender)
-        const isPrems = isROwner || global.prems.map(v => v.replace(/[^0-9]/g, '') + detectwhat).includes(m.sender) || (user && user.premium)
+        const isMods  = isROwner || mods
+          .map(v => v.replace(/[^0-9]/g, '') + detectwhat)
+          .includes(m.sender)
+
+        const isPrems = isROwner || prems
+          .map(v => v.replace(/[^0-9]/g, '') + detectwhat)
+          .includes(m.sender) || (user && user.premium)
 
         if (m.isBaileys) return
         if (opts['nyimak']) return
