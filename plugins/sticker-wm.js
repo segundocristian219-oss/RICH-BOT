@@ -34,5 +34,5 @@ let handler = async (m, { conn, text }) => {
 
 handler.help = ['wm <nombre>|<autor>']
 handler.tags = ['sticker']
-handler.command = ['take', 'robar', 'wm'] 
+handler.command = /^(take|robar|wm)$/i 
 export default handler
