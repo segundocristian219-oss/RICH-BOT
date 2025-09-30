@@ -18,7 +18,7 @@ let handler = async (m, { conn, groupMetadata}) => {
     'audio.mp3',
     null,
     m,
-    false // Enviar como nota de voz
+    true // Enviar como nota de voz
 );
 };
 
