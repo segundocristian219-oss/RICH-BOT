@@ -33,6 +33,6 @@ let handler = async (m, { text, conn, command }) => {
 
 handler.help = ['ttsearch <consulta>']
 handler.tags = ['buscador']
-handler.command = ['ttsearch', 'tiktoksearch']
+handler.command = ['ttss', 'tiktoksearch']
 
 export default handler
