@@ -187,7 +187,6 @@ delete tempStorage[m.sender]
 }
 }
 handler.command = /^(play|play2)$/i
-handler.register = false
 export default handler
 
 async function search(query, options = {}) {
