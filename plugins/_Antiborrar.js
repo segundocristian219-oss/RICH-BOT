@@ -1,133 +1,310 @@
-import axios from "axios";
-import yts from "yt-search";
-import fs from "fs";
-import path from "path";
-import { promisify } from "util";
-import { pipeline } from "stream";
+import fetch from 'node-fetch'
+import yts from 'yt-search'
+import ytdl from 'ytdl-core'
+import axios from 'axios'
+import { ogmp3 } from '../lib/youtubedl.js'
+const LimitAud = 725 * 1024 * 1024 // 725MB
+const LimitVid = 425 * 1024 * 1024 // 425MB
+let tempStorage = {}
 
-const streamPipe = promisify(pipeline);
-const MAX_FILE_SIZE = 60 * 1024 * 1024; // 60 MB
-const MAX_DURATION = 10 * 60; // 10 min en segundos
+const handler = async (m, {conn, command, args, text, usedPrefix}) => {
+if (!text) return conn.reply(m.chat, `${lenguajeGB['smsAvisoMG']()}${mid.smsMalused4}\n*${usedPrefix + command} Billie Eilish - Bellyache*`, m)
+const yt_play = await search(args.join(' '))
+const ytplay2 = await yts(text)
+const texto1 = `⌘━─━─≪ *YOUTUBE* ≫─━─━⌘
+★ ${mid.smsYT1}
+★ ${yt_play[0].title}
+╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴
+★ ${mid.smsYT15}
+★ ${yt_play[0].ago}
+╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴
+★ ${mid.smsYT5}
+★ ${secondString(yt_play[0].duration.seconds)}
+╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴
+★ ${mid.smsYT10}
+★ ${MilesNumber(yt_play[0].views)}
+╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴
+★ ${mid.smsYT2}
+★ ${yt_play[0].author.name}
+╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴ ╴
+★ ${mid.smsYT4}
+★ ${yt_play[0].url.replace(/^https?:\/\//, '')}
+⌘━━─≪ ${gt} ≫─━━⌘
+`.trim()
 
-// Probar una API
-const tryApi = async (name, url) => {
-  try {
-    const res = await axios.get(url, { timeout: 12000 });
-    const link = res.data?.result?.url || res.data?.data?.url || res.data?.res?.url;
-    if (!link) throw new Error("No hay link válido");
-    return { url: link, api: name };
-  } catch (e) {
-    throw new Error(`${name} falló: ${e.message}`);
-  }
-};
+tempStorage[m.sender] = {url: yt_play[0].url, title: yt_play[0].title}
 
-const handler = async (m, { conn, text }) => {
-  try {
-    if (!text?.trim()) {
-      return conn.reply(m.chat, "🎬 Ingresa el nombre o link de un video", m);
-    }
+if (m.isWABusiness) {
+await conn.sendFile(
+m.chat,
+yt_play[0].thumbnail,
+'error.jpg',
+texto1 + '\n> Para descargas en audio reacciona con "🎶"\n> Para descargar en video reacciona con "📽"',
+m,
+null,
+fake
+)
+} else {
+await conn.sendMessage(
+m.chat,
+{
+image: {url: yt_play[0].thumbnail},
+caption: gt,
+footer: texto1,
+buttons: [
+{buttonId: `.ytmp3 ${yt_play[0].url}`, buttonText: {displayText: '𓃠 𝗔 𝗨 𝗗 𝗜 𝗢'}, type: 1},
+{buttonId: `.ytmp4 ${yt_play[0].url}`, buttonText: {displayText: '𓃠 𝗩 𝗜 𝗗 𝗘 𝗢'}, type: 1}
+],
+viewOnce: true,
+headerType: 4
+},
+{quoted: m}
+)
+}
+}
 
-    await m.react("🕒");
+handler.before = async (m, {conn}) => {
+const text = m.text.trim().toLowerCase()
+if (!['🎶', 'audio', '📽', 'video'].includes(text)) return
+const userVideoData = tempStorage[m.sender]
+if (!userVideoData || !userVideoData.url) return
+const [input, qualityInput = text === '🎶' || text === 'audio' ? '320' : '720'] = userVideoData.title.split(' ')
+const audioQualities = ['64', '96', '128', '192', '256', '320']
+const videoQualities = ['240', '360', '480', '720', '1080']
+const isAudio = text === '🎶' || text === 'audio'
+const selectedQuality = (isAudio ? audioQualities : videoQualities).includes(qualityInput) ? qualityInput : isAudio ? '320' : '720'
 
-    // Detectar si es link directo
-    const videoMatch = text.match(
-      /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/
-    );
-    const query = videoMatch ? `https://youtu.be/${videoMatch[1]}` : text;
+const audioApis = [
+{url: () => ogmp3.download(userVideoData.url, selectedQuality, 'audio'), extract: (data) => ({data: data.result.download, isDirect: false})},
+{url: () => ytmp3(userVideoData.url), extract: (data) => ({data, isDirect: true})},
+{
+url: () =>
+fetch(`https://api.neoxr.eu/api/youtube?url=${userVideoData.url}&type=audio&quality=128kbps&apikey=GataDios`).then((res) => res.json()),
+extract: (data) => ({data: data.data.url, isDirect: false})
+},
+{
+url: () => fetch(`${global.APIs.stellar.url}/dow/ytmp3?url=${userVideoData.url}`).then((res) => res.json()),
+extract: (data) => ({data: data?.data?.dl, isDirect: false})
+},
+{
+url: () => fetch(`https://api.siputzx.my.id/api/d/ytmp4?url=${userVideoData.url}`).then((res) => res.json()),
+extract: (data) => ({data: data.dl, isDirect: false})
+},
+{
+url: () => fetch(`${apis}/download/ytmp3?url=${userVideoData.url}`).then((res) => res.json()),
+extract: (data) => ({data: data.status ? data.data.download.url : null, isDirect: false})
+},
+{
+url: () => fetch(`https://api.zenkey.my.id/api/download/ytmp3?apikey=zenkey&url=${userVideoData.url}`).then((res) => res.json()),
+extract: (data) => ({data: data.result.download.url, isDirect: false})
+}
+]
 
-    // Buscar video
-    const search = await yts(query);
-    const video = videoMatch
-      ? search.videos.find((v) => v.videoId === videoMatch[1]) || search.all[0]
-      : search.videos[0];
+const videoApis = [
+{url: () => ogmp3.download(userVideoData.url, selectedQuality, 'video'), extract: (data) => ({data: data.result.download, isDirect: false})},
+{url: () => ytmp4(userVideoData.url), extract: (data) => ({data, isDirect: false})},
+{
+url: () => fetch(`https://api.siputzx.my.id/api/d/ytmp4?url=${userVideoData.url}`).then((res) => res.json()),
+extract: (data) => ({data: data.dl, isDirect: false})
+},
+{
+url: () => fetch(`https://api.neoxr.eu/api/youtube?url=${userVideoData.url}&type=video&quality=720p&apikey=GataDios`).then((res) => res.json()),
+extract: (data) => ({data: data.data.url, isDirect: false})
+},
+{
+url: () => fetch(`${global.APIs.stellar.url}/dow/ytmp4?url=${userVideoData.url}`).then((res) => res.json()),
+extract: (data) => ({data: data?.data?.dl, isDirect: false})
+},
+{
+url: () => fetch(`${apis}/download/ytmp4?url=${userVideoData.url}`).then((res) => res.json()),
+extract: (data) => ({data: data.status ? data.data.download.url : null, isDirect: false})
+},
+{
+url: () => fetch(`https://exonity.tech/api/ytdlp2-faster?apikey=adminsepuh&url=${userVideoData.url}`).then((res) => res.json()),
+extract: (data) => ({data: data.result.media.mp4, isDirect: false})
+}
+]
 
-    if (!video) return conn.reply(m.chat, "❌ No se encontraron resultados.", m);
+const download = async (apis) => {
+let mediaData = null
+let isDirect = false
+for (const api of apis) {
+try {
+const data = await api.url()
+const {data: extractedData, isDirect: direct} = api.extract(data)
+if (extractedData) {
+const size = await getFileSize(extractedData)
+if (size >= 1024) {
+mediaData = extractedData
+isDirect = direct
+break
+}
+}
+} catch (e) {
+console.log(`Error con API: ${e}`)
+continue
+}
+}
+return {mediaData, isDirect}
+}
+try {
+if (text === '🎶' || text === 'audio') {
+await conn.reply(m.chat, lenguajeGB['smsAvisoEG']() + mid.smsAud, fkontak, m || null)
+const {mediaData, isDirect} = await download(audioApis)
+if (mediaData) {
+const fileSize = await getFileSize(mediaData)
+if (fileSize > LimitAud) {
+await conn.sendMessage(
+m.chat,
+{document: isDirect ? mediaData : {url: mediaData}, mimetype: 'audio/mpeg', fileName: `${userVideoData.title}.mp3`},
+{quoted: m || null}
+)
+} else {
+await conn.sendMessage(m.chat, {audio: isDirect ? mediaData : {url: mediaData}, mimetype: 'audio/mpeg'}, {quoted: m || null})
+}
+} else {
+await conn.reply(m.chat, '❌ No se pudo descargar el audio', m || null)
+}
+} else if (text === '📽' || text === 'video') {
+await conn.reply(m.chat, lenguajeGB['smsAvisoEG']() + mid.smsVid, fkontak, m || null)
+const {mediaData, isDirect} = await download(videoApis)
+if (mediaData) {
+const fileSize = await getFileSize(mediaData)
+const messageOptions = {fileName: `${userVideoData.title}.mp4`, caption: `⟡ *${userVideoData.title}*\n> ${wm}`, mimetype: 'video/mp4'}
+if (fileSize > LimitVid) {
+await conn.sendMessage(m.chat, {document: isDirect ? mediaData : {url: mediaData}, ...messageOptions}, {quoted: m || null})
+} else {
+await conn.sendMessage(m.chat, {video: isDirect ? mediaData : {url: mediaData}, ...messageOptions}, {quoted: m || null})
+}
+} else {
+await conn.reply(m.chat, '❌ No se pudo descargar el video', m || null)
+}
+}
+} catch (error) {
+console.error(error)
+} finally {
+delete tempStorage[m.sender]
+}
+}
+handler.command = /^(play|play2)$/i
+handler.register = true
+export default handler
 
-    const { title, author, url: videoUrl, timestamp, seconds } = video;
+async function search(query, options = {}) {
+const search = await yts.search({query, hl: 'es', gl: 'ES', ...options})
+return search.videos
+}
 
-    // Validar duración
-    if (seconds > MAX_DURATION) {
-      return conn.reply(
-        m.chat,
-        `⚠️ El video dura ${timestamp}, máximo permitido ${MAX_DURATION / 60} min.`,
-        m
-      );
-    }
+function MilesNumber(number) {
+const exp = /(\d)(?=(\d{3})+(?!\d))/g
+const rep = '$1.'
+const arr = number.toString().split('.')
+arr[0] = arr[0].replace(exp, rep)
+return arr[1] ? arr.join('.') : arr[0]
+}
 
-    // APIs en competición
-    const apiPromises = [
-      tryApi("MayAPI", `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&quality=720&apikey=may-0595dca2`),
-      tryApi("Adonix1", `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}`),
-      tryApi("Adonix2", `https://api-adonix.ultraplus.click/download/ytmp4?apikey=SoyMaycol<3&url=${encodeURIComponent(videoUrl)}`),
-      tryApi("Adonix3", `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Angelkk122&url=${encodeURIComponent(videoUrl)}`),
-      tryApi("Sylphy", `https://api.sylphy.xyz/download/ytmp4?url=${encodeURIComponent(videoUrl)}&apikey=sylphy-fbb9&quality=720`)
-    ];
+function secondString(seconds) {
+seconds = Number(seconds)
+const d = Math.floor(seconds / (3600 * 24))
+const h = Math.floor((seconds % (3600 * 24)) / 3600)
+const m = Math.floor((seconds % 3600) / 60)
+const s = Math.floor(seconds % 60)
+const dDisplay = d > 0 ? d + (d == 1 ? ' día, ' : ' días, ') : ''
+const hDisplay = h > 0 ? h + (h == 1 ? ' hora, ' : ' horas, ') : ''
+const mDisplay = m > 0 ? m + (m == 1 ? ' minuto, ' : ' minutos, ') : ''
+const sDisplay = s > 0 ? s + (s == 1 ? ' segundo' : ' segundos') : ''
+return dDisplay + hDisplay + mDisplay + sDisplay
+}
 
-    let winner;
-    try {
-      winner = await Promise.any(apiPromises);
-    } catch {
-      return conn.reply(m.chat, "⚠️ Ninguna API respondió correctamente.", m);
-    }
+const getBuffer = async (url) => {
+try {
+const response = await fetch(url)
+const buffer = await response.arrayBuffer()
+return Buffer.from(buffer)
+} catch (error) {
+console.error('Error al obtener el buffer', error)
+throw new Error('Error al obtener el buffer')
+}
+}
 
-    const downloadUrl = winner.url;
-    const apiUsada = winner.api;
+async function getFileSize(url) {
+try {
+const response = await fetch(url, {method: 'HEAD'})
+return parseInt(response.headers.get('content-length') || 0)
+} catch {
+return 0
+}
+}
 
-    // Carpeta tmp
-    const tmpDir = path.join(process.cwd(), "tmp");
-    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
-    const filePath = path.join(tmpDir, `${Date.now()}_yt.mp4`);
+async function fetchInvidious(url) {
+const apiUrl = 'https://invidious.io/api/v1/get_video_info'
+const response = await fetch(`${apiUrl}?url=${encodeURIComponent(url)}`)
+const data = await response.json()
+if (data && data.video) {
+const videoInfo = data.video
+return videoInfo
+} else {
+throw new Error('No se pudo obtener información del video desde Invidious')
+}
+}
 
-    // Descargar con stream
-    const dl = await axios.get(downloadUrl, { responseType: "stream", timeout: 0 });
-    let totalSize = 0;
-    dl.data.on("data", (chunk) => {
-      totalSize += chunk.length;
-      if (totalSize > MAX_FILE_SIZE) dl.data.destroy();
-    });
+function getBestVideoQuality(videoData) {
+const preferredQualities = ['720p', '360p', 'auto']
+const availableQualities = Object.keys(videoData.video)
+for (let quality of preferredQualities) {
+if (availableQualities.includes(quality)) {
+return videoData.video[quality].quality
+}
+}
+return '360p'
+}
 
-    await streamPipe(dl.data, fs.createWriteStream(filePath));
+async function ytMp3(url) {
+return new Promise((resolve, reject) => {
+ytdl
+.getInfo(url)
+.then(async (getUrl) => {
+let result = []
+for (let i = 0; i < getUrl.formats.length; i++) {
+let item = getUrl.formats[i]
+if (item.mimeType == 'audio/webm; codecs=\"opus\"') {
+let {contentLength} = item
+let bytes = await bytesToSize(contentLength)
+result[i] = {audio: item.url, size: bytes}
+}
+}
+let resultFix = result.filter((x) => x.audio != undefined && x.size != undefined)
+let tiny = await axios.get(`https://tinyurl.com/api-create.php?url=${resultFix[0].audio}`)
+let tinyUrl = tiny.data
+let title = getUrl.videoDetails.title
+let thumb = getUrl.player_response.microformat.playerMicroformatRenderer.thumbnail.thumbnails[0].url
+resolve({title, result: tinyUrl, result2: resultFix, thumb})
+})
+.catch(reject)
+})
+}
 
-    // Verificar tamaño final
-    const stats = fs.statSync(filePath);
-    if (stats.size > MAX_FILE_SIZE) {
-      fs.unlinkSync(filePath);
-      throw new Error("Archivo excede los 60 MB permitidos por WhatsApp.");
-    }
-
-    // Enviar video (rápido: desde archivo local, sin thumbnail extra)
-    await conn.sendMessage(
-      m.chat,
-      {
-        video: fs.readFileSync(filePath),
-        mimetype: "video/mp4",
-        fileName: `${title}.mp4`,
-        caption: `
-「✦」*${title}*
-
-> ✐ Canal » *${author?.name || "Desconocido"}*
-> ⏱ Duración » *${timestamp}*
-> 🌐 API » *${apiUsada}*
-
-✔️ Video enviado con éxito 🏆
-        `.trim(),
-        supportsStreaming: true,
-      },
-      { quoted: m }
-    );
-
-    fs.unlinkSync(filePath); // limpiar
-    await m.react("✅");
-
-  } catch (e) {
-    console.error("[ERROR]", e);
-    await m.react("✖️");
-    return conn.reply(m.chat, "⚠️ Error: " + e.message, m);
-  }
-};
-
-handler.command = ["play2", "ytmp4", "ytv", "mp4"];
-handler.help = ["play2 <texto|link>"];
-handler.tags = ["descargas"];
-
-export default handler;
+async function ytMp4(url) {
+return new Promise(async (resolve, reject) => {
+ytdl
+.getInfo(url)
+.then(async (getUrl) => {
+let result = []
+for (let i = 0; i < getUrl.formats.length; i++) {
+let item = getUrl.formats[i]
+if (item.container == 'mp4' && item.hasVideo == true && item.hasAudio == true) {
+let {qualityLabel, contentLength} = item
+let bytes = await bytesToSize(contentLength)
+result[i] = {video: item.url, quality: qualityLabel, size: bytes}
+}
+}
+let resultFix = result.filter((x) => x.video != undefined && x.size != undefined && x.quality != undefined)
+let tiny = await axios.get(`https://tinyurl.com/api-create.php?url=${resultFix[0].video}`)
+let tinyUrl = tiny.data
+let title = getUrl.videoDetails.title
+let thumb = getUrl.player_response.microformat.playerMicroformatRenderer.thumbnail.thumbnails[0].url
+resolve({title, result: tinyUrl, rersult2: resultFix[0].video, thumb})
+})
+.catch(reject)
+})
+}
