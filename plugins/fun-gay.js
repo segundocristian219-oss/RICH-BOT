@@ -10,14 +10,12 @@ let handler = async (m, { conn, groupMetadata }) => {
 
   await m.reply(mensaje, null, { mentions: [who] });
 
-  // Envío del audio como audio normal
-  await conn.sendFile(
-    m.chat,
-    'https://qu.ax/grQGD.m4a',
-    'audio.mp3',
-    null,
-    m
-  );
+  // Envío del audio como audio normal 🎵
+  await conn.sendMessage(m.chat, {
+    audio: { url: 'https://qu.ax/grQGD.m4a' },
+    mimetype: 'audio/mp4',
+    fileName: 'audio.mp3'
+  }, { quoted: m });
 };
 
 handler.help = ['gay'];
