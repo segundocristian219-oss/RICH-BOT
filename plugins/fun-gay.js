@@ -6,7 +6,7 @@ let handler = async (m, { conn, groupMetadata }) => {
     : m.sender;
 
   let nro = Math.floor(Math.random() * 501); // Valor entre 0 y 500
-  let mensaje = `@${who.split("@")[0]} es un puto gay y es un ${nro}% Gay 🏳️‍🌈.`;
+  let mensaje = `@${who.split("@")[0]} es un puto y es un ${nro}% Gay 🏳️‍🌈.`;
 
   await m.reply(mensaje, null, { mentions: [who] });
 };
