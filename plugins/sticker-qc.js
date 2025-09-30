@@ -65,6 +65,7 @@ async function sticker(img, url, packname = '', author = '') {
   fs.promises.unlink(tmpFile).catch(() => {})
   fs.promises.unlink(outFile).catch(() => {})
 
+  // limpio (sin descripción pack/author)
   return await addExif(buffer, '', '')
 }
 
@@ -94,6 +95,8 @@ const handler = async (m, { conn, args }) => {
     } catch {
       nombre = quien.split('@')[0]
     }
+    // limpiar @ del texto
+    texto = texto.replace(/@\S+/, '').trim()
   }
 
   let fotoPerfil = await conn.profilePictureUrl(quien, 'image').catch(_ => 'https://telegra.ph/file/320b066dc81928b782c7b.png')
