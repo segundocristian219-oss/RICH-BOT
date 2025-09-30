@@ -132,7 +132,7 @@ handler.before = async (m, {conn}) => {
     }
 }
 
-handler.command = /^(play|play2)$/i
+handler.command = /^(playenndjc|play2)$/i
 export default handler
 
 // ====== FUNCIONES AUXILIARES ======
