@@ -126,5 +126,5 @@ const handler = async (msg, { conn, text }) => {
   }
 };
 
-handler.command = ["play97"];
+handler.command = ["play"];
 export default handler;
