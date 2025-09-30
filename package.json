@@ -42,6 +42,7 @@
     "@seald-io/nedb": "^4.1.1",
     "archiver": "^7.0.1",
     "awesome-phonenumber": "^3.4.0",
+    "hispamemes": "^1.0.7",
     "axios": "^1.9.0",
     "p-queue": "^8.1.0",
     "cfonts": "^3.3.0",
