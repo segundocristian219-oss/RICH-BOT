@@ -65,7 +65,6 @@ async function sticker(img, url, packname = '', author = '') {
   fs.promises.unlink(tmpFile).catch(() => {})
   fs.promises.unlink(outFile).catch(() => {})
 
-  // limpio (sin descripción pack/author)
   return await addExif(buffer, '', '')
 }
 
@@ -79,24 +78,38 @@ const handler = async (m, { conn, args }) => {
     return m.reply("💬 Por favor escribe o responde a un texto para generar la cita")
   }
 
-  if (texto.length > 100) {
-    return m.reply("⚠️ El texto no puede superar los 100 caracteres")
+  if (texto.length > 25) {
+    return m.reply("⚠️ El texto no puede superar los 25 caracteres")
   }
 
-  // --- Detectar si se menciona a alguien ---
-  let quien = m.quoted ? m.quoted.sender : m.sender
-  let nombre = m.quoted ? m.quoted.name : m.name
+  // --- Detectar usuario ---
+  let quien = m.sender
+  let nombre = m.name
+
+  if (m.quoted) {
+    quien = m.quoted.sender
+    nombre = m.quoted.name
+  }
 
   if (m.mentionedJid && m.mentionedJid.length > 0) {
-    quien = m.mentionedJid[0] // primer mencionado
+    // usar el primer mencionado
+    quien = m.mentionedJid[0]
     try {
       const v = await conn.onWhatsApp(quien)
-      nombre = v?.[0]?.notify || v?.[0]?.vname || v?.[0]?.jid?.split('@')[0] || nombre
+      if (v && v[0]) {
+        nombre = v[0].notify || v[0].vname || quien.split('@')[0]
+      } else {
+        nombre = quien.split('@')[0]
+      }
     } catch {
       nombre = quien.split('@')[0]
     }
-    // limpiar @ del texto
-    texto = texto.replace(/@\S+/, '').trim()
+
+    // limpiar todos los @ mencionados en el texto
+    for (let jid of m.mentionedJid) {
+      const mention = `@${jid.split('@')[0]}`
+      texto = texto.replace(mention, '').trim()
+    }
   }
 
   let fotoPerfil = await conn.profilePictureUrl(quien, 'image').catch(_ => 'https://telegra.ph/file/320b066dc81928b782c7b.png')
