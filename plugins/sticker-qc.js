@@ -78,32 +78,22 @@ const handler = async (m, { conn, args }) => {
     return m.reply("💬 Por favor escribe o responde a un texto para generar la cita")
   }
 
-  if (texto.length > 25) {
-    return m.reply("⚠️ El texto no puede superar los 25 caracteres")
+  if (texto.length > 100) {
+    return m.reply("⚠️ El texto no puede superar los 100 caracteres")
   }
 
   // --- Detectar usuario ---
   let quien = m.sender
-  let nombre = m.name
+  let nombre = await conn.getName(quien)
 
   if (m.quoted) {
     quien = m.quoted.sender
-    nombre = m.quoted.name
+    nombre = await conn.getName(quien)
   }
 
   if (m.mentionedJid && m.mentionedJid.length > 0) {
-    // usar el primer mencionado
-    quien = m.mentionedJid[0]
-    try {
-      const v = await conn.onWhatsApp(quien)
-      if (v && v[0]) {
-        nombre = v[0].notify || v[0].vname || quien.split('@')[0]
-      } else {
-        nombre = quien.split('@')[0]
-      }
-    } catch {
-      nombre = quien.split('@')[0]
-    }
+    quien = m.mentionedJid[0] // Primer mencionado
+    nombre = await conn.getName(quien) // <-- La mejora clave, siempre el nombre real de WhatsApp
 
     // limpiar todos los @ mencionados en el texto
     for (let jid of m.mentionedJid) {
@@ -125,15 +115,15 @@ const handler = async (m, { conn, args }) => {
       "height": 768,
       "scale": 2,
       "messages": [{
-        "entities": [],
-        "avatar": true,
-        "from": {
-          "id": 1,
-          "name": nombre,
-          "photo": { "url": fotoPerfil }
+        entities: [],
+        avatar: true,
+        from: {
+          id: 1,
+          name: nombre, // <-- Aquí se usa el nombre real
+          photo: { url: fotoPerfil }
         },
-        "text": texto,
-        "replyMessage": {}
+        text: texto,
+        replyMessage: {}
       }]
     }
 
