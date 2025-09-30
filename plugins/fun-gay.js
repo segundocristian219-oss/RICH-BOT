@@ -24,7 +24,7 @@ let handler = async (m, { conn, groupMetadata}) => {
 
 handler.help = ['gay'];
 handler.tags = ['fun'];
-handler.command = ['cekgay', 'gay2'];
+handler.command = ['cekgay', 'gay'];
 handler.group = true;
 
 export default handler;
