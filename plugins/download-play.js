@@ -44,43 +44,15 @@ const handler = async (msg, { conn, text }) => {
     return search(data);
   };
 
-  const tryApi = async (apiName, urlBuilder) => {
-    try {
-      const r = await axios.get(urlBuilder(), { timeout: 7000 });
-      const audioUrl = extractUrl(r.data);
-      if (audioUrl) return { url: audioUrl, api: apiName };
-      throw new Error(`${apiName}: No entregó URL válido`);
-    } catch (err) {
-      throw new Error(`${apiName}: ${err.message}`);
-    }
-  };
-
-  const apis = [
-    () => tryApi("Api 1M", () => `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp3&quality=128&apikey=may-0595dca2`),
-    () => tryApi("Api 2A", () => `https://api-adonix.ultraplus.click/download/ytmp3?apikey=AdonixKeyz11c2f6197&url=${encodeURIComponent(videoUrl)}&quality=128`),
-    () => tryApi("Api 3F", () => `https://api-adonix.ultraplus.click/download/ytmp3?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}&quality=128`),
-    () => tryApi("Api 5K", () => `https://api-adonix.ultraplus.click/download/ytmp3?apikey=Angelkk122&url=${encodeURIComponent(videoUrl)}&quality=128`),
-    () => tryApi("Api 6Srv", () => `http://173.208.192.170/download/ytmp3?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}&quality=128`)
-  ];
-
-  const tryDownload = async () => {
-    let lastError;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        return await Promise.any(apis.map(api => api()));
-      } catch (err) {
-        lastError = err;
-        if (attempt < 3) {
-          await conn.sendMessage(msg.key.remoteJid, { react: { text: "🔄", key: msg.key } });
-        }
-        if (attempt === 3) throw lastError;
-      }
-    }
-  };
-
   try {
-    const winner = await tryDownload();
-    const audioDownloadUrl = winner.url;
+    // Solo MayAPI
+    const r = await axios.get(
+      `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp3&quality=128&apikey=may-0595dca2`,
+      { timeout: 10000 }
+    );
+
+    const audioUrl = extractUrl(r.data);
+    if (!audioUrl) throw new Error("MayAPI no entregó un enlace válido");
 
     await conn.sendMessage(  
       msg.key.remoteJid,  
@@ -94,7 +66,7 @@ const handler = async (msg, { conn, text }) => {
 ⭒ ִֶָ७ ꯭🎤˙⋆｡ - *𝙰𝚛𝚝𝚒𝚜𝚝𝚊:* ${artista}
 ⭒ ִֶָ७ ꯭🕑˙⋆｡ - *𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗:* ${duration}
 ⭒ ִֶָ७ ꯭📺˙⋆｡ - *𝙲𝚊𝚕𝚒𝚍𝚊𝚍:* 128kbps
-⭒ ִֶָ७ ꯭🌐˙⋆｡ - *𝙰𝚙𝚒:* ${winner.api}
+⭒ ִֶָ७ ꯭🌐˙⋆｡ - *𝙰𝚙𝚒:* MayAPI
 
 » *𝘌𝘕𝘝𝘐𝘈𝘕𝘋𝘖 𝘈𝘜𝘋𝘐𝘖*  🎧
 » *𝘈𝘎𝘜𝘈𝘙𝘋𝘌 𝘜𝘕 𝘗𝘖𝘊𝘖*...
@@ -108,7 +80,7 @@ const handler = async (msg, { conn, text }) => {
     );
 
     await conn.sendMessage(msg.key.remoteJid, {  
-      audio: { url: audioDownloadUrl },  
+      audio: { url: audioUrl },  
       mimetype: "audio/mpeg",  
       fileName: `${title.slice(0, 30)}.mp3`.replace(/[^\w\s.-]/gi, ''),  
       ptt: false  
@@ -119,7 +91,7 @@ const handler = async (msg, { conn, text }) => {
   } catch (e) {
     const errorMsg = typeof e === "string"
       ? e
-      : `❌ *Error:* ${e.message || "Ocurrió un problema"}\n\n🔸 *Posibles soluciones:*\n• Verifica el nombre de la canción\n• Intenta con otro tema\n• Prueba más tarde`;
+      : `❌ *Error:* ${e.message || "Ocurrió un problema con MayAPI"}\n\n🔸 *Posibles soluciones:*\n• Verifica el nombre de la canción\n• Intenta con otro tema\n• Prueba más tarde`;
 
     await conn.sendMessage(msg.key.remoteJid, { text: errorMsg }, { quoted: msg });
   }
