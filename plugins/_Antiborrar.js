@@ -1,192 +1,132 @@
-import axios from "axios"
-import yts from "yt-search"
-import fs from "fs"
-import path from "path"
-import { promisify } from "util"
-import { pipeline } from "stream"
+import axios from "axios";
+import yts from "yt-search";
+import fs from "fs";
+import path from "path";
+import { promisify } from "util";
+import { pipeline } from "stream";
 
-const streamPipe = promisify(pipeline)
-const MAX_FILE_SIZE = 60 * 1024 * 1024
+const streamPipe = promisify(pipeline);
+const MAX_FILE_SIZE = 60 * 1024 * 1024; // 60 MB
+const MAX_DURATION = 10 * 60; // 10 min en segundos
 
-const handler = async (msg, { conn, text }) => {
-  if (!text || !text.trim()) {
-    return conn.sendMessage(
-      msg.key.remoteJid,
-      { text: "🎬 Ingresa el nombre de algún video" },
-      { quoted: msg }
-    )
-  }
-
-  await conn.sendMessage(msg.key.remoteJid, { react: { text: "🕒", key: msg.key } })
-
-  const search = await yts({ query: text, hl: "es", gl: "MX" })
-  const video = search.videos[0]
-  if (!video) {
-    return conn.sendMessage(
-      msg.key.remoteJid,
-      { text: "❌ Sin resultados." },
-      { quoted: msg }
-    )
-  }
-
-  const { url: videoUrl, title, timestamp: duration, author } = video
-  const artista = author.name
-  const posibles = ["1080p","720p","480p","360p","240p","144p"]
-
-  let videoDownloadUrl = null
-  let apiUsada = "Desconocida"
-  let calidadElegida = "Desconocida"
-
-  const tryDownload = async () => {
-    let winner = null
-    let intentos = 0
-
-    while (!winner && intentos < 2) {
-      intentos++
-      try {
-        const tryApi = (apiName, urlBuilder) => new Promise(async (resolve, reject) => {
-          const controller = new AbortController()
-          try {
-            for (const q of posibles) {
-              const apiUrl = urlBuilder(q)
-              const r = await axios.get(apiUrl, { timeout: 10000, signal: controller.signal })
-              if (r.data?.status && (r.data?.result?.url || r.data?.data?.url)) {
-                resolve({
-                  url: r.data.result?.url || r.data.data?.url,
-                  api: apiName,
-                  calidad: q,
-                  controller
-                })
-                return
-              }
-            }
-            reject(new Error(`${apiName}: No entregó un URL válido`))
-          } catch (err) {
-            if (
-              err.message &&
-              (err.message.toLowerCase().includes("aborted") ||
-               err.message.toLowerCase().includes("canceled"))
-            ) return
-            reject(new Error(`${apiName}: ${err.message}`))
-          }
-        })
-
-        const mayApi = tryApi("MayAPI", q => `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&quality=${q}&apikey=may-0595dca2`)
-        const neoxApi = tryApi("NeoxR", q => `https://api.neoxr.eu/api/youtube?url=${encodeURIComponent(videoUrl)}&type=video&quality=${q}&apikey=russellxz`)
-        const adonixApi = tryApi("AdonixAPI", q => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=AdonixKeyz11c2f6197&url=${encodeURIComponent(videoUrl)}&quality=${q}`)
-        const adofreeApi = tryApi("Adofreekey", q => `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}&quality=${q}`)
-
-        winner = await Promise.any([mayApi, neoxApi, adonixApi, adofreeApi])
-        ;[mayApi, neoxApi, adonixApi, adofreeApi].forEach(p => { if (p !== winner && p.controller) p.controller.abort() })
-      } catch (e) {
-        if (intentos >= 2) throw new Error("No se pudo obtener el video después de 2 intentos.")
-      }
-    }
-
-    return winner
-  }
-
+// Probar una API
+const tryApi = async (name, url) => {
   try {
-    const winner = await tryDownload()
-    videoDownloadUrl = winner.url
-    apiUsada = winner.api
-    calidadElegida = winner.calidad
+    const res = await axios.get(url, { timeout: 12000 });
+    const link = res.data?.result?.url || res.data?.data?.url;
+    if (!link) throw new Error("No hay link válido");
+    return { url: link, api: name };
+  } catch (e) {
+    throw new Error(`${name} falló: ${e.message}`);
+  }
+};
 
-    // Plan A: Enviar directo con URL
+const handler = async (m, { conn, text }) => {
+  try {
+    if (!text?.trim())
+      return conn.reply(m.chat, "🎬 Ingresa el nombre de algún video", m);
+
+    await m.react("🕒");
+
+    // Detectar si es link directo
+    const videoMatch = text.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/
+    );
+    const query = videoMatch ? `https://youtu.be/${videoMatch[1]}` : text;
+
+    const search = await yts(query);
+    const video = videoMatch
+      ? search.videos.find((v) => v.videoId === videoMatch[1]) || search.all[0]
+      : search.videos[0];
+
+    if (!video) return conn.reply(m.chat, "❌ Sin resultados.", m);
+
+    const { title, author, url: videoUrl, timestamp, seconds } = video;
+
+    // Validar duración
+    if (seconds > MAX_DURATION)
+      return conn.reply(
+        m.chat,
+        `⚠️ El video dura ${timestamp}, límite ${MAX_DURATION / 60} min.`,
+        m
+      );
+
+    // APIs de descarga MP4
+    const apiPromises = [
+      tryApi("MayAPI", `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp4&apikey=may-0595dca2`),
+      tryApi("Adonix1", `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Adofreekey&url=${encodeURIComponent(videoUrl)}`),
+      tryApi("Adonix2", `https://api-adonix.ultraplus.click/download/ytmp4?apikey=SoyMaycol<3&url=${encodeURIComponent(videoUrl)}`),
+      tryApi("Adonix3", `https://api-adonix.ultraplus.click/download/ytmp4?apikey=Angelkk122&url=${encodeURIComponent(videoUrl)}`),
+    ];
+
+    let winner;
     try {
-      await conn.sendMessage(
-        msg.key.remoteJid,
-        {
-          video: { url: videoDownloadUrl },
-          mimetype: "video/mp4",
-          fileName: `${title}.mp4`,
-          caption: `
-> *𝚈𝚃𝙼𝙿4 𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳𝙴𝚁*
-
-⭒ ִֶָ७ ꯭🎵 - *𝚃𝚒́𝚝𝚞𝚕𝚘:* ${title}
-⭒ ִֶָ७ ꯭🎤 - *𝙰𝚛𝚝𝚒𝚜𝚝𝚊:* ${artista}
-⭒ ִֶָ७ ꯭🕑 - *𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗:* ${duration}
-⭒ ִֶָ७ ꯭📺 - *𝙲𝚊𝚕𝚒𝚍𝚊𝚍:* ${calidadElegida}
-⭒ ִֶָ७ ꯭🌐 - *𝙰𝚙𝚒:* ${apiUsada}
-
-» 𝙑𝙄𝘿𝙀𝙊 𝙀𝙉𝙑𝙄𝘼𝘿𝙊  🎧
-» 𝘿𝙄𝙎𝙁𝙍𝙐𝙏𝘼𝙇𝙊 𝘾𝘼𝙈𝙋𝙀𝙊𝙉..
-
-⇆‌ ㅤ◁ㅤㅤ❚❚ㅤㅤ▷ㅤ↻
-
-> \`\`\`© 𝖯𝗈𝗐𝖾𝗋𝖾𝖽 𝖻𝗒 𝗁𝖾𝗋𝗇𝖺𝗇𝖽𝖾𝗓.𝗑𝗒𝗓\`\`\`
-              `.trim(),
-          supportsStreaming: true,
-          contextInfo: { isHd: true }
-        },
-        { quoted: msg }
-      )
-      await conn.sendMessage(msg.key.remoteJid, { react: { text: "✅", key: msg.key } })
-      return
-    } catch (err) {
-      // Si falla el envío directo → Plan B
+      winner = await Promise.any(apiPromises);
+    } catch {
+      return conn.reply(
+        m.chat,
+        "⚠️ Ninguna API respondió correctamente.",
+        m
+      );
     }
 
-    // Plan B: Descargar archivo y enviar
-    const tmp = path.join(process.cwd(), "tmp")
-    if (!fs.existsSync(tmp)) fs.mkdirSync(tmp)
-    const file = path.join(tmp, `${Date.now()}_vid.mp4`)
+    const downloadUrl = winner.url;
+    const apiUsada = winner.api;
 
-    const dl = await axios.get(videoDownloadUrl, { responseType: "stream", timeout: 0 })
-    let totalSize = 0
-    dl.data.on("data", chunk => {
-      totalSize += chunk.length
-      if (totalSize > MAX_FILE_SIZE) dl.data.destroy()
-    })
+    // Crear carpeta tmp
+    const tmpDir = path.join(process.cwd(), "tmp");
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
+    const filePath = path.join(tmpDir, `${Date.now()}_yt.mp4`);
 
-    await streamPipe(dl.data, fs.createWriteStream(file))
+    // Descargar con stream
+    const dl = await axios.get(downloadUrl, { responseType: "stream", timeout: 0 });
+    let totalSize = 0;
+    dl.data.on("data", (chunk) => {
+      totalSize += chunk.length;
+      if (totalSize > MAX_FILE_SIZE) dl.data.destroy();
+    });
 
-    const stats = fs.statSync(file)
+    await streamPipe(dl.data, fs.createWriteStream(filePath));
+
+    const stats = fs.statSync(filePath);
     if (stats.size > MAX_FILE_SIZE) {
-      fs.unlinkSync(file)
-      throw new Error("El archivo excede el límite de 60 MB permitido por WhatsApp.")
+      fs.unlinkSync(filePath);
+      throw new Error("Archivo excede el límite de 60 MB permitido por WhatsApp.");
     }
 
+    // Enviar video
     await conn.sendMessage(
-      msg.key.remoteJid,
+      m.chat,
       {
-        video: fs.readFileSync(file),
+        video: fs.readFileSync(filePath),
         mimetype: "video/mp4",
         fileName: `${title}.mp4`,
         caption: `
-> *𝚈𝚃𝙼𝙿4 𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳𝙴𝚁*
+「✦」Descargando *<${title}>*
 
-⭒ ִֶָ७ ꯭🎵 - *𝚃𝚒́𝚝𝚞𝚕𝚘:* ${title}
-⭒ ִֶָ७ ꯭🎤 - *𝙰𝚛𝚝𝚒𝚜𝚝𝚊:* ${artista}
-⭒ ִֶָ७ ꯭🕑 - *𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗:* ${duration}
-⭒ ִֶָ७ ꯭📺 - *𝙲𝚊𝚕𝚒𝚍𝚊𝚍:* ${calidadElegida}
-⭒ ִֶָ७ ꯭🌐 - *𝙰𝚙𝚒:* ${apiUsada}
+> ✐ Canal » *${author?.name || "Desconocido"}*
+> ⴵ Duración » *${timestamp}*
+> ✰ Calidad » *720p/1080p*
+> 🌐 API » *${apiUsada}*
 
-» 𝙑𝙄𝘿𝙀𝙊 𝙀𝙉𝙑𝙄𝘼𝘿𝙊  🎧
-» 𝘿𝙄𝙎𝙁𝙍𝙐𝙏𝘼𝙇𝙊 𝘾𝘼𝙈𝙋𝙀𝙊𝙉..
-
-⇆‌ ㅤ◁ㅤㅤ❚❚ㅤㅤ▷ㅤ↻
-
-> \`\`\`© 𝖯𝗈𝗐𝖾𝗋𝖾𝖽 𝖻𝗒 𝗁𝖾𝗋𝗇𝖺𝗇𝖽𝖾𝗓.𝗑𝗒𝗓\`\`\`
-            `.trim(),
+✔️ Video enviado con éxito, disfrútalo 🏆
+        `.trim(),
         supportsStreaming: true,
-        contextInfo: { isHd: true }
       },
-      { quoted: msg }
-    )
+      { quoted: m }
+    );
 
-    fs.unlinkSync(file)
-    await conn.sendMessage(msg.key.remoteJid, { react: { text: "✅", key: msg.key } })
-
+    fs.unlinkSync(filePath);
+    await m.react("✅");
   } catch (e) {
-    console.error(e)
-    await conn.sendMessage(
-      msg.key.remoteJid,
-      { text: `⚠️ Error al descargar el video:\n\n${e.message}` },
-      { quoted: msg }
-    )
+    console.error("[ERROR]", e);
+    await m.react("✖️");
+    return conn.reply(m.chat, "⚠️ Error: " + e.message, m);
   }
-}
+};
 
-handler.command = ["play4"]
-export default handler
+handler.command = ["play2", "ytmp4", "ytv", "mp4"];
+handler.help = ["play2 <texto|link>"];
+handler.tags = ["descargas"];
+
+export default handler;
