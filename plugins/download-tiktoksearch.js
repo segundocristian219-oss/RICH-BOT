@@ -41,7 +41,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     let cap = `💮 ◈ 𝗧𝗶𝗸𝗧𝗼𝗸 ◈ 💮\n\n` +
               `🎴 ✦ 𝗧𝗶́𝘁𝘂𝗹𝗼  : ${videos[0].title}\n` +
               `🌸 ✦ 𝗕𝘂́𝘀𝗾𝘂𝗲𝗱𝗮 : ${text}\n\n` +
-              `👻 𝗕𝗼𝘁: MaycolPlus | Creado por SoyMaycol`;
+              `👻 𝗕𝗼𝘁:  |`;
 
     // Preparar los medios a enviar
     let medias = videos.map((video, index) => ({
@@ -49,7 +49,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       data: { url: video.no_wm },
       caption: index === 0
         ? cap
-        : `🎴 ✦ Título : ${video.title}\n⏱️ Tiempo de proceso : ${((new Date() - old) * 1)} ms\n👻 MaycolPlus`
+        : `🎴 ✦ Título : ${video.title}\n⏱️ Tiempo de proceso : ${((new Date() - old) * 1)} ms\n`
     }));
 
     // Enviar videos
