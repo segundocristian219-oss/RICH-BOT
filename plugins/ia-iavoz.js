@@ -1,70 +1,53 @@
-import axios from "axios";
-import fs from "fs";
+import fetch from 'node-fetch';
+import { Buffer } from 'buffer';
 
-let sessions = {}; // 📝 Guardará los mensajes por chat
+async function streamToBuffer(stream) {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
 
-let handler = async (m, { conn, usedPrefix, command, text }) => {
-    if (!text) return conn.sendMessage(
-        m.chat,
-        { text: `❌ ¿Qué quieres preguntar?\n\nEjemplo: ${usedPrefix + command} hola` },
-        { quoted: m }
-    );
+const handler = async (msg, { conn, args, command }) => {
+  const chatId = msg.key.remoteJid;
+  const text = args.join(" ");
 
-    try {
-        await m.react('💬');
+  if (!text) {
+    return conn.sendMessage(chatId, {
+      text: `⚠️ *Uso:* ${command} <texto>`,
+    }, { quoted: msg });
+  }
 
-        // Inicializa sesión si no existe
-        if (!sessions[m.chat]) sessions[m.chat] = [];
+  try {
+    if (msg?.key?.id) await conn.sendMessage(chatId, { react: { text: "🎤", key: msg.key } });
 
-        // Guarda mensaje actual
-        sessions[m.chat].push({ role: 'user', content: text });
+    const res = await fetch(`https://myapiadonix.vercel.app/api/adonixvoz?q=${encodeURIComponent(text)}`);
+    if (!res.ok) throw new Error('No pude obtener audio de Adonix');
 
-        // Construir "historial" para la API
-        let historyText = sessions[m.chat]
-            .map(msg => msg.content)
-            .join('\n');
+    const bufferAudio = await streamToBuffer(res.body);
 
-        // Prompt base de Yau
-        let prompt = `Eres una chica llamada Yau, eres provocativa, caliente y juguetona que disfruta coquetear. Responde de manera sensual,directa y atrevida, con un tono provocador y seductor. 
-Usuario "${m.pushName || 'Desconocido'}" te ha dicho los siguientes mensajes:
-${historyText}
-Responde directo y usa algunos emojis como 🔥🥵😌😏💦🍆🍌 pero no uses tantos emojis no todos solo pocos (no abusar), y habla siempre con menos de 200 carácteres.`;
+    await conn.sendMessage(chatId, {
+      audio: bufferAudio,
+      mimetype: 'audio/mpeg',
+      ptt: true
+    }, { quoted: msg.key ? msg : null });
 
-        let json = await chatWithYau(prompt);
+    if (msg?.key?.id) await conn.sendMessage(chatId, { react: { text: "✅", key: msg.key } });
 
-        // Crea contacto para citar
-        let fkontak = {   
-            key: { fromMe: false, participant: "0@s.whatsapp.net", remoteJid: "0@s.whatsapp.net" },   
-            message: { contactMessage: { displayName: "🗣️ YAU", vcard: "BEGIN:VCARD\nVERSION:3.0\nFN:YAU\nTEL;type=CELL;type=VOICE;waid=0:0\nEND:VCARD" } }   
-        };
+  } catch (e) {
+    console.error("❌ Error en comando AI voz:", e);
 
-        await conn.sendMessage(
-            m.chat,
-            { text: `\`🗣️\`\n\n> ${json.result}` },
-            { quoted: fkontak }
-        );
+    if (msg?.key?.id) await conn.sendMessage(chatId, { react: { text: "❌", key: msg.key } });
 
-        await m.react('🔥');
-
-    } catch (e) {
-        console.error(e);
-        await m.react('❎');
-    }
+    await conn.sendMessage(chatId, {
+      text: "❌ Ocurrió un error al generar la voz, intentalo otra vez",
+    }, { quoted: msg });
+  }
 };
 
-handler.help = ["yau", "ai"];
-handler.tags = ["ia"];
-handler.command = ['yau', 'ai'];
+handler.command = ['iavoz'];
+handler.tags = ['ia'];
+handler.help = ['iavoz <texto>'];
 
 export default handler;
-
-// Función que llama a la API de Yau
-async function chatWithYau(prompt) {
-    let response = await axios.get("https://www.mayapi.ooguy.com/ai-venice", {
-        params: {
-            q: prompt,
-            apikey: "nevi"
-        }
-    });
-    return response.data;
-}
