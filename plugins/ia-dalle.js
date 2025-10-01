@@ -12,7 +12,7 @@ const handler = async (msg, { conn, text, args, command }) => {
   }
 
   const prompt = args.join(' ');
-  const apiUrl = `https://api.hiuraa.my.id/ai-img/imagen?text=${encodeURIComponent(prompt)`;
+  const apiUrl = `https://api.siputzx.my.id/api/ai/flux?prompt=${encodeURIComponent(prompt)}`;
 
   await conn.sendMessage(chatId, {
     react: { text: '🧠', key: msg.key }
@@ -27,7 +27,7 @@ const handler = async (msg, { conn, text, args, command }) => {
 
     await conn.sendMessage(chatId, {
       image: imageBuffer,
-      caption: `🎨 *Prompt:* ${prompt}\n\n🖼️ Imagen generada con DALL·E`,
+      caption: `🎨 *Prompt:* ${prompt}\n\n🖼️ Imagen generada con AI Flux`,
       mimetype: 'image/jpeg'
     }, { quoted: msg });
 
@@ -36,7 +36,7 @@ const handler = async (msg, { conn, text, args, command }) => {
     });
 
   } catch (err) {
-    console.error("❌ Error en el comando dalle:", err.message);
+    console.error("❌ Error en el comando AI Flux:", err.message);
     await conn.sendMessage(chatId, {
       text: `❌ *Ocurrió un error al generar la imagen:*\n_${err.message}_`
     }, { quoted: msg });
