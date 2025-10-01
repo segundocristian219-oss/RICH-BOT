@@ -25,17 +25,17 @@ let handler = async (msg, { conn, args, command }) => {
     // Llamada a la API de Yau
     const res = await axios.get("https://www.mayapi.ooguy.com/ai-venice", {
       params: { q: text, apikey: "nevi" },
-      responseType: 'arraybuffer' // para recibir audio directo
+      responseType: 'arraybuffer' // recibir audio directo
     });
 
     if (!res.data) throw new Error('No pude obtener audio de la API');
 
     const bufferAudio = Buffer.from(res.data, 'binary');
 
+    // ✅ Enviar audio normal, no PTT
     await conn.sendMessage(chatId, {
       audio: bufferAudio,
-      mimetype: 'audio/mpeg',
-      ptt: true
+      mimetype: 'audio/mpeg' // quitar ptt
     }, { quoted: msg.key ? msg : null });
 
     if (msg?.key?.id) await conn.sendMessage(chatId, { react: { text: "✅", key: msg.key } });
