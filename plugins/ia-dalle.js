@@ -50,6 +50,5 @@ const handler = async (msg, { conn, text, args, command }) => {
 handler.command = ['dalle'];
 handler.help = ['dalle <prompt>'];
 handler.tags = ['ia'];
-handler.register = true;
 
 export default handler;
