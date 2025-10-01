@@ -12,7 +12,7 @@ const handler = async (msg, { conn, text, args, command }) => {
   }
 
   const prompt = args.join(' ');
-  const apiUrl = `https://api.hiuraa.my.id/ai-img/imagen?text=${encodeURIComponent(prompt)}`;
+  const apiUrl = `https://api.hiuraa.my.id/ai-img/imagen?text=${encodeURIComponent(prompt)`;
 
   await conn.sendMessage(chatId, {
     react: { text: '🧠', key: msg.key }
