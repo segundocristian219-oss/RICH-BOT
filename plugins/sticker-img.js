@@ -17,7 +17,7 @@ const handler = async (msg, { conn }) => {
 
         // Reacción de proceso
         await conn.sendMessage(msg.key.remoteJid, { 
-            react: { text: "⏳", key: msg.key } 
+            react: { text: "🕒", key: msg.key } 
         });
 
         // Obtener el sticker citado
