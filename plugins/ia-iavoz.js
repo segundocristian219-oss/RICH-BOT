@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import axios from 'axios';
 import { Buffer } from 'buffer';
 
 async function streamToBuffer(stream) {
@@ -9,7 +9,7 @@ async function streamToBuffer(stream) {
   return Buffer.concat(chunks);
 }
 
-const handler = async (msg, { conn, args, command }) => {
+let handler = async (msg, { conn, args, command }) => {
   const chatId = msg.key.remoteJid;
   const text = args.join(" ");
 
@@ -22,10 +22,15 @@ const handler = async (msg, { conn, args, command }) => {
   try {
     if (msg?.key?.id) await conn.sendMessage(chatId, { react: { text: "🎤", key: msg.key } });
 
-    const res = await fetch(`https://myapiadonix.vercel.app/api/adonixvoz?q=${encodeURIComponent(text)}`);
-    if (!res.ok) throw new Error('No pude obtener audio de Adonix');
+    // Llamada a la API de Yau
+    const res = await axios.get("https://www.mayapi.ooguy.com/ai-venice", {
+      params: { q: text, apikey: "nevi" },
+      responseType: 'arraybuffer' // para recibir audio directo
+    });
 
-    const bufferAudio = await streamToBuffer(res.body);
+    if (!res.data) throw new Error('No pude obtener audio de la API');
+
+    const bufferAudio = Buffer.from(res.data, 'binary');
 
     await conn.sendMessage(chatId, {
       audio: bufferAudio,
