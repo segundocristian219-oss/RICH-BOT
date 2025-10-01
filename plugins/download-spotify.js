@@ -1,74 +1,57 @@
 import axios from 'axios';
 
-let handler = async (m, { conn, text }) => {
-
-  if (!text) return m.reply(`🍂 Ingresa el nombre de una canción o una URL de Spotify.`);
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text) throw `${lenguajeGB.smsMalused2()} ⊱ *${usedPrefix + command} Bellyache*`;
 
   try {
-    let song;
-    const isSpotifyUrl = text.startsWith('https://open.spotify.com/');
-    if (isSpotifyUrl) {
-      song = { url: text };
-    } else {
-      const results = await spotifyxv(text);
-      if (!results.length) return m.reply('No se encontró la canción.');
-      song = results[0];
-    }
+    m.react('⌛️');
 
-    await conn.sendMessage(m.chat, { react: { text: '🕓', key: m.key } });
+    let songInfo = await spotifyxv(text);
+    if (!songInfo.length) throw 'No se encontró la canción.';
+    let song = songInfo[0];
 
-    const res = await axios.get(`https://api.stellarwa.xyz/dow/spotify?url=${song.url}&apikey=proyectsV2`);
+    const res = await axios.get(`https://api.stellarwa.xyz/dow/spotify?url=${song.url}`);
     const data = res.data?.data;
-    if (!data?.download) return m.reply('No se pudo obtener el enlace de descarga.');
+    if (!data?.download) throw 'No se pudo obtener el enlace de descarga.';
 
-    const info = `[ ✿ ] Descargando › *${data.title}*\n\n` +
-                 `> [✩] Artista › *${data.artist}*\n` +
-                 (song.album ? `> ✰ Álbum › *${song.album}*\n` : '') +
-                 `> 🌱 Duración › *${data.duration}*\n` +
-                 `> 🍂 Enlace › *${song.url}*`;
+    const info = `🪼 *Título:*\n${data.title}\n🪩 *Artista:*\n${data.artist}\n🦋 *Álbum:*\n${song.album}\n⏳ *Duración:*\n${data.duration}\n🔗 *Enlace:*\n${song.url}\n\n${wm}`;
 
-    await conn.sendMessage(m.chat, { image: { url: data.image }, caption: info }, { quoted: m });
-
-   /*
     await conn.sendMessage(m.chat, {
-      audio: { url: data.download },
-      ptt: true,
-      fileName: `${data.title}.mp3`,
-      mimetype: 'audio/mpeg'
-    }, { quoted: m });
-    */
-    await conn.sendMessage(m.chat, {
-      audio: { url: data.download },
-      mimetype: 'audio/mpeg',
-      ptt: false,
-      fileName: `${data.title}.mp3`,
+      text: info,
       contextInfo: {
+        forwardingScore: 9999999,
+        isForwarded: true,
         externalAdReply: {
-          title: data.title,
-          body: `Duración: ${data.duration}`,
+          showAdAttribution: true,
+          containsAutoReply: true,
+          renderLargerThumbnail: true,
+          title: 'Spotify Music',
           mediaType: 1,
           thumbnailUrl: data.image,
-          mediaUrl: song.url,
-          sourceUrl: song.url,
-          renderLargerThumbnail: true
+          mediaUrl: data.download,
+          sourceUrl: data.download
         }
       }
     }, { quoted: m });
 
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+    await conn.sendMessage(m.chat, {
+      audio: { url: data.download },
+      fileName: `${data.title}.mp3`,
+      mimetype: 'audio/mpeg'
+    }, { quoted: m });
 
+    m.react('✅');
   } catch (e) {
-    await m.reply('❌ Error al procesar la canción.');
+    m.react('❌');
+    m.reply(`❌ Ocurrió un error al procesar tu solicitud.`);
   }
 };
 
-handler.tags = ['descargas'];
-handler.help = ['spotify'];
-handler.command = ['spotify'];
+handler.command = ['spotify', 'music'];
 export default handler;
 
 async function spotifyxv(query) {
-  const res = await axios.get(`https://api.stellarwa.xyz/search/spotify?query=${encodeURIComponent(query)}&apikey=proyectsV2`);
+  const res = await axios.get(`https://api.stellarwa.xyz/search/spotify?query=${query}`);
   if (!res.data?.status || !res.data?.data?.length) return [];
 
   const firstTrack = res.data.data[0];
