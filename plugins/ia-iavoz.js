@@ -22,7 +22,7 @@ const handler = async (msg, { conn, args, command }) => {
   try {
     if (msg?.key?.id) await conn.sendMessage(chatId, { react: { text: "🎤", key: msg.key } });
 
-    const res = await fetch(`https://myapiadonix.vercel.app/api/adonixvoz?q=${encodeURIComponent(text)}`);
+    const res = await fetch(`https://apiadonix.kozow.com/api/adonixvoz?q=${encodeURIComponent(text)}`);
     if (!res.ok) throw new Error('No pude obtener audio de Adonix');
 
     const bufferAudio = await streamToBuffer(res.body);
