@@ -44,15 +44,21 @@ const handler = async (msg, { conn, text }) => {
     return search(data);
   };
 
-  try {
-    // Solo MayAPI
-    const r = await axios.get(
-      `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp3&quality=128&apikey=may-0595dca2`,
-      { timeout: 10000 }
-    );
-
+  const tryApi = async (apiName, url) => {
+    const r = await axios.get(url, { timeout: 10000 });
     const audioUrl = extractUrl(r.data);
-    if (!audioUrl) throw new Error("MayAPI no entregó un enlace válido");
+    if (audioUrl) return { url: audioUrl, api: apiName };
+    throw new Error(`${apiName}: No entregó URL válido`);
+  };
+
+  const apis = [
+    tryApi("MyAPI", `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp3&quality=128&apikey=may-0595dca2`),
+    tryApi("Adonix", `https://apiadonix.kozow.com/download/ytmp3?apikey=AdonixKeyo4vwtf9331&url=${encodeURIComponent(videoUrl)}&quality=128`)
+  ];
+
+  try {
+    const winner = await Promise.any(apis); // la primera que responda bien
+    const audioDownloadUrl = winner.url;
 
     await conn.sendMessage(  
       msg.key.remoteJid,  
@@ -66,7 +72,7 @@ const handler = async (msg, { conn, text }) => {
 ⭒ ִֶָ७ ꯭🎤˙⋆｡ - *𝙰𝚛𝚝𝚒𝚜𝚝𝚊:* ${artista}
 ⭒ ִֶָ७ ꯭🕑˙⋆｡ - *𝙳𝚞𝚛𝚊𝚌𝚒ó𝚗:* ${duration}
 ⭒ ִֶָ७ ꯭📺˙⋆｡ - *𝙲𝚊𝚕𝚒𝚍𝚊𝚍:* 128kbps
-⭒ ִֶָ७ ꯭🌐˙⋆｡ - *𝙰𝚙𝚒:* MayAPI
+⭒ ִֶָ७ ꯭🌐˙⋆｡ - *𝙰𝚙𝚒:* ${winner.api}
 
 » *𝘌𝘕𝘝𝘐𝘈𝘕𝘋𝘖 𝘈𝘜𝘋𝘐𝘖*  🎧
 » *𝘈𝘎𝘜𝘈𝘙𝘋𝘌 𝘜𝘕 𝘗𝘖𝘊𝘖*...
@@ -80,7 +86,7 @@ const handler = async (msg, { conn, text }) => {
     );
 
     await conn.sendMessage(msg.key.remoteJid, {  
-      audio: { url: audioUrl },  
+      audio: { url: audioDownloadUrl },  
       mimetype: "audio/mpeg",  
       fileName: `${title.slice(0, 30)}.mp3`.replace(/[^\w\s.-]/gi, ''),  
       ptt: false  
@@ -89,9 +95,9 @@ const handler = async (msg, { conn, text }) => {
     await conn.sendMessage(msg.key.remoteJid, { react: { text: "✅", key: msg.key } });
 
   } catch (e) {
-    const errorMsg = typeof e === "string"
-      ? e
-      : `❌ *Error:* ${e.message || "Ocurrió un problema con MayAPI"}\n\n🔸 *Posibles soluciones:*\n• Verifica el nombre de la canción\n• Intenta con otro tema\n• Prueba más tarde`;
+    const errorMsg = `❌ *Error:* ${
+      e.message || "Ninguna API respondió"
+    }\n\n🔸 *Posibles soluciones:*\n• Verifica el nombre de la canción\n• Intenta con otro tema\n• Prueba más tarde`;
 
     await conn.sendMessage(msg.key.remoteJid, { text: errorMsg }, { quoted: msg });
   }
