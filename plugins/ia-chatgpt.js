@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) {
-    return conn.reply(m.chat, `${emoji} ¡Hola! ¿cómo puedo ayudarte hoy?`, m, rcanal);
+    return conn.reply(m.chat, `🔥 ¡Hola! ¿cómo puedo ayudarte hoy?`, m,);
   }
 
     const res = await fetch('https://files.catbox.moe/j65sl7.jpg');
@@ -25,13 +25,13 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const data = await res.json();
 
     if (!data || !data.response) {
-      return conn.reply(m.chat, "❌ No recibí respuesta de la IA, intenta de nuevo.", m, fake);
+      return conn.reply(m.chat, "❌ No recibí respuesta de la IA, intenta de nuevo.", m,);
     }
 
-    await conn.reply(m.chat, `${data.response}`, fkontak, rcanal);
+    await conn.reply(m.chat, `${data.response}`, fkontak,);
   } catch (e) {
     console.error(e);
-    await conn.reply(m.chat, "⚠️ Hubo un error al conectar con la IA.", m, fake);
+    await conn.reply(m.chat, "⚠️ Hubo un error al conectar con la IA.", m,);
   }
 };
 
