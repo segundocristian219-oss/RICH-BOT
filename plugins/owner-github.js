@@ -4,13 +4,13 @@ import fetch from 'node-fetch'
  * Configuración — pon tus valores o usa variables de entorno
  */
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN // obligatorio
-const GITHUB_OWNER = process.env.GITHUB_OWNER || 'tu-usuario-o-org'
+const GITHUB_OWNER = process.env.GITHUB_OWNER || 'AngelBotsD'
 const GITHUB_REPO = process.env.GITHUB_REPO || 'tu-repo'
 const DEFAULT_BRANCH = 'main'
 
 // Lista de JIDs que pueden usar el .kill (cambia por los tuyos)
 const ALLOWED_SENDERS = [
-  '521xxxxxxxxxx@s.whatsapp.net', // tu número
+  '5217227584934@s.whatsapp.net', // tu número
   // 'otraJid@s.whatsapp.net'
 ]
 
