@@ -14,11 +14,11 @@ const gemini = {
     )
     const cookieHeader = res.headers.get("set-cookie")
     if (!cookieHeader) throw new Error('No se encontró el encabezado "set-cookie".')
-    return cookieHeader.split(";")[0]
+    return cookieHeader.split(';')[0]
   },
 
   ask: async function (prompt, previousId = null) {
-    if (typeof prompt !== "string" || !prompt?.trim()?.length)
+    if (typeof prompt !== "string" || !prompt.trim().length)
       throw new Error("❌ Debes escribir un mensaje válido.")
 
     let resumeArray = null
@@ -69,43 +69,45 @@ const gemini = {
           parse1[4] &&
           parse1[4][0] &&
           parse1[4][0][1] &&
-          typeof parse1[4][0][1][0] === "string"
+          typeof parse1[4][0][1][0] === 'string'
         ) {
           newResumeArray = [...parse1[1], parse1[4][0][0]]
-          text = parse1[4][0][1][0].replace(/\*\*(.+?)\*\*/g, `*$1*`)
+          text = parse1[4][0][1][0].replace(/\*\*(.+?)\*\*/g, '*$1*')
           found = true
           break
         }
       } catch {}
     }
 
-    if (!found)
-      throw new Error("❌ No se pudo procesar la respuesta. La API pudo haber cambiado.")
+    if (!found) throw new Error('❌ No se pudo procesar la respuesta. La API pudo haber cambiado.')
 
     const id = Buffer.from(
       JSON.stringify({ newResumeArray, cookie: headers.cookie })
-    ).toString("base64")
+    ).toString('base64')
     return { text, id }
   },
 }
 
-// 🔥 Handler principal
+// 🧠 Handler adaptado para DS6 Meta
 const handler = async (m, { conn }) => {
   try {
     const botNumber = conn.user?.id?.split(':')[0] + '@s.whatsapp.net'
     const mentioned = m?.message?.extendedTextMessage?.contextInfo?.mentionedJid || []
 
-    if (!mentioned.includes(botNumber)) return // No mencionó al bot
+    // Si no hay mención al bot, salir
+    if (!mentioned.includes(botNumber)) return
 
-    const chatId = m.key.remoteJid
+    // Extraer texto del mensaje
     const text =
-      m.message?.conversation ||
-      m.message?.extendedTextMessage?.text ||
+      m?.message?.conversation ||
+      m?.message?.extendedTextMessage?.text ||
       ''
-    const cleanText = text.replace(/@\w+/g, '').trim()
-
+    
+    // Eliminar menciones o nombres con estilos (ej. @BAKI BOT, 𝑩𝑨𝑲𝑰)
+    const cleanText = text.replace(/@\S+|\s*𝑩𝑨𝑲𝑰\s*𝑩𝑶𝑻/gi, '').trim()
     if (!cleanText) return
 
+    const chatId = m.key.remoteJid
     await conn.sendMessage(chatId, { react: { text: '⏳', key: m.key } })
 
     const previousId = geminiSessions[m.sender]
@@ -113,7 +115,7 @@ const handler = async (m, { conn }) => {
     geminiSessions[m.sender] = result.id
 
     const name = m.pushName || 'Usuario'
-    const responseMsg = `╭━〔 *RESPUESTA IA* 〕━⬣
+    const msg = `╭━〔 *RESPUESTA IA* 〕━⬣
 │ ✦ Pregunta: ${cleanText}
 │ ✦ Usuario: ${name}
 ╰━━━━━━━━━━━━⬣
@@ -124,21 +126,19 @@ ${result.text}
 │ ✦ Powered by Gemini AI
 ╰━━━━━━━━━━━━⬣`
 
-    await conn.sendMessage(
-      chatId,
-      { text: responseMsg, mentions: [m.sender] },
-      { quoted: m }
-    )
-
+    await conn.sendMessage(chatId, { text: msg, mentions: [m.sender] }, { quoted: m })
     await conn.sendMessage(chatId, { react: { text: '✅', key: m.key } })
+
   } catch (err) {
     console.error(err)
-    await conn.sendMessage(m.key.remoteJid, { text: `❌ Error: ${err.message}` }, { quoted: m })
+    await conn.sendMessage(m.chat, { text: `❌ Error: ${err.message}` }, { quoted: m })
   }
 }
 
-// 👇 Esto hace que funcione con menciones tipo @bot
-handler.customPrefix = /@𝑩𝑨𝑲𝑰 𝑩𝑶𝑻/i
-handler.command = new RegExp()
+// No necesita prefijo ni comando, responde a mención
+handler.help = ['@bakibot']
 handler.tags = ['ai']
+handler.command = /^(bakibot)$/i
+handler.customPrefix = /@𝑩𝑨𝑲𝑰\s*𝑩𝑶𝑻/i
+handler.limit = false
 export default handler
