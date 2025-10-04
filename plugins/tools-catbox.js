@@ -28,7 +28,7 @@ const aliasesText = Object.entries(aliases)
     const q = m.quoted || m
     const mime = q.mediaType || ''
     if (!/image|video|audio|sticker|document/.test(mime)) {
-      return conn.reply(m.chat, `${emoji}\n Responde a una imagen / vídeo / audio / documento\n\nEjemplo:\n${usedPrefix + command} catbox\n\n${aliasesText}`, m, rcanal)
+      return conn.reply(m.chat, `🕒\n Responde a una imagen / vídeo / audio / documento\n\nEjemplo:\n${usedPrefix + command} catbox\n\n${aliasesText}`, m,)
     }
 
     const mediaPath = await q.download(true)
