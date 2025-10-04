@@ -98,7 +98,7 @@ ${aliases}`
 
 handler.help = ['tourl <servicio>']
 handler.tags = ['tools']
-handler.command = /^(tourl|upload|url)$/i
+handler.command = /^(catbox|ct|url)$/i
 handler.owner = false
 export default handler
 
