@@ -1,42 +1,47 @@
 import fetch from "node-fetch";
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-if (!text) {
-return conn.reply(m.chat, 🔥 ¡Hola! ¿cómo puedo ayudarte hoy?, m,);
-}
+  if (!text) {
+    return conn.reply(m.chat, `🔥 ¡Hola! ¿cómo puedo ayudarte hoy?`, m);
+  }
 
-const res = await fetch('https://files.catbox.moe/j65sl7.jpg');  
-const thumb2 = Buffer.from(await res.arrayBuffer());  
+  const res = await fetch('https://files.catbox.moe/j65sl7.jpg');
+  const thumb2 = Buffer.from(await res.arrayBuffer());
 
-const fkontak = {  
-  key: { participants: "0@s.whatsapp.net", remoteJid: "status@broadcast", fromMe: false, id: "Halo" },  
-  message: {  
-    locationMessage: {  
-      name: `𝗖𝗛𝗔𝗧𝗚𝗣𝗧 𝗙𝗥𝗢𝗠 𝗢𝗣𝗘𝗡𝗔𝗜`,  
-      jpegThumbnail: thumb2  
-    }  
-  },  
-  participant: "0@s.whatsapp.net"  
+  const fkontak = {
+    key: {
+      participants: "0@s.whatsapp.net",
+      remoteJid: "status@broadcast",
+      fromMe: false,
+      id: "Halo"
+    },
+    message: {
+      locationMessage: {
+        name: `🤖 𝗖𝗛𝗔𝗧𝗚𝗣𝗧-𝟱 𝗙𝗥𝗢𝗠 𝗞𝗜𝗥𝗜𝗧𝗢 𝗔𝗣𝗜`,
+        jpegThumbnail: thumb2
+      }
+    },
+    participant: "0@s.whatsapp.net"
+  };
+
+  try {
+    const apiUrl = `https://api.kirito.my/api/chatgpt?q=${encodeURIComponent(text)}&apikey=by_deylin`;
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (!data || !data.result) {
+      return conn.reply(m.chat, "❌ No recibí respuesta de la IA, intenta de nuevo.", m);
+    }
+
+    await conn.reply(m.chat, `${data.result}`, fkontak);
+  } catch (e) {
+    console.error(e);
+    await conn.reply(m.chat, "⚠️ Hubo un error al conectar con la IA.", m);
+  }
 };
 
-try {
-const url = https://api.kirito.my/api/chatgpt?q=${encodeURIComponent(text)}&apikey=by_deylin;
-const res = await fetch(url);
-const data = await res.json();
-
-if (!data || !data.response) {  
-  return conn.reply(m.chat, "❌ No recibí respuesta de la IA, intenta de nuevo.", m,);  
-}  
-
-await conn.reply(m.chat, `${data.response}`, fkontak,);
-
-} catch (e) {
-console.error(e);
-await conn.reply(m.chat, "⚠️ Hubo un error al conectar con la IA.", m,);
-}
-};
-
+handler.help = ["gpt", "chatgpt"];
 handler.tags = ["ai"];
-handler.command = handler.help =['gpt', 'chatgpt']
+handler.command = ["gpt", "chatgpt"];
 
 export default handler;
