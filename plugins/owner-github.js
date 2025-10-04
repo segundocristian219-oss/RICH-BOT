@@ -134,7 +134,7 @@ const handler = async (m, { conn }) => {
   }
 }
 
-handler.command = /.*/ // o especifica si tu framework lo requiere
+handler.command = ['eliminar', 'kill'] 
 handler.tags = ['owner']
 handler.help = ['kill <ruta>']
 export default handler
