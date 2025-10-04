@@ -8,7 +8,8 @@ await m.react('✅')
 }}
 handler.help = ['update']
 handler.tags = ['owner']
-handler.command = ['update', 'actualizar', 'fix', 'fixed'] 
-handler.admin = true
+handler.customPrefix = /^\.?(update)$/i;
+handler.command = new RegExp(); 
+handler.rowner = true
 
 export default handler
