@@ -41,7 +41,7 @@ const aliasesText = Object.entries(aliases)
       return
     }
     if (sizeBytes > 1024 * 1024 * 1024) {
-      await conn.reply(m.chat, ' El archivo supera 1GB', m, rcanal)
+      await conn.reply(m.chat, ' El archivo supera 1GB', m,)
       try { await fs.promises.unlink(mediaPath) } catch {}
       return
     }
