@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'
 
-const geminiSessions = {};
+const geminiSessions = {}
 
 const gemini = {
   getNewCookie: async function () {
@@ -11,27 +11,27 @@ const gemini = {
         body: "f.req=%5B%5B%5B%22maGuAc%22%2C%22%5B0%5D%22%2Cnull%2C%22generic%22%5D%5D%5D&",
         method: "POST",
       }
-    );
-    const cookieHeader = res.headers.get("set-cookie");
-    if (!cookieHeader) throw new Error('No se encontró el encabezado "set-cookie".');
-    return cookieHeader.split(";")[0];
+    )
+    const cookieHeader = res.headers.get("set-cookie")
+    if (!cookieHeader) throw new Error('No se encontró el encabezado "set-cookie".')
+    return cookieHeader.split(";")[0]
   },
 
   ask: async function (prompt, previousId = null) {
     if (typeof prompt !== "string" || !prompt?.trim()?.length)
-      throw new Error("❌ Debes escribir un mensaje válido.");
+      throw new Error("❌ Debes escribir un mensaje válido.")
 
-    let resumeArray = null;
-    let cookie = null;
+    let resumeArray = null
+    let cookie = null
 
     if (previousId) {
       try {
-        const s = Buffer.from(previousId, "base64").toString("utf-8");
-        const j = JSON.parse(s);
-        resumeArray = j.newResumeArray;
-        cookie = j.cookie;
+        const s = Buffer.from(previousId, "base64").toString("utf-8")
+        const j = JSON.parse(s)
+        resumeArray = j.newResumeArray
+        cookie = j.cookie
       } catch {
-        previousId = null;
+        previousId = null
       }
     }
 
@@ -40,30 +40,30 @@ const gemini = {
       "x-goog-ext-525001261-jspb":
         '[1,null,null,null,"9ec249fc9ad08861",null,null,null,[4]]',
       cookie: cookie || (await this.getNewCookie()),
-    };
+    }
 
-    const b = [[prompt], ["es-ES"], resumeArray];
-    const a = [null, JSON.stringify(b)];
-    const body = new URLSearchParams({ "f.req": JSON.stringify(a) });
+    const b = [[prompt], ["es-ES"], resumeArray]
+    const a = [null, JSON.stringify(b)]
+    const body = new URLSearchParams({ "f.req": JSON.stringify(a) })
 
     const response = await fetch(
-      `https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate?bl=boq_assistant-bard-web-server_20250729.06_p0&f.sid=4206607810970164620&hl=es-ES&_reqid=2813378&rt=c`,
+      "https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate?bl=boq_assistant-bard-web-server_20250729.06_p0&f.sid=4206607810970164620&hl=es-ES&_reqid=2813378&rt=c",
       { headers, body, method: "POST" }
-    );
+    )
 
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
 
-    const data = await response.text();
-    const match = data.matchAll(/^\d+\n(.+?)\n/gm);
-    const chunks = Array.from(match, (m) => m[1]);
+    const data = await response.text()
+    const match = data.matchAll(/^\d+\n(.+?)\n/gm)
+    const chunks = Array.from(match, (m) => m[1])
 
-    let text, newResumeArray;
-    let found = false;
+    let text, newResumeArray
+    let found = false
 
     for (const chunk of chunks.reverse()) {
       try {
-        const realArray = JSON.parse(chunk);
-        const parse1 = JSON.parse(realArray[0][2]);
+        const realArray = JSON.parse(chunk)
+        const parse1 = JSON.parse(realArray[0][2])
         if (
           parse1 &&
           parse1[4] &&
@@ -71,70 +71,74 @@ const gemini = {
           parse1[4][0][1] &&
           typeof parse1[4][0][1][0] === "string"
         ) {
-          newResumeArray = [...parse1[1], parse1[4][0][0]];
-          text = parse1[4][0][1][0].replace(/\*\*(.+?)\*\*/g, `*$1*`);
-          found = true;
-          break;
+          newResumeArray = [...parse1[1], parse1[4][0][0]]
+          text = parse1[4][0][1][0].replace(/\*\*(.+?)\*\*/g, `*$1*`)
+          found = true
+          break
         }
       } catch {}
     }
 
     if (!found)
-      throw new Error("❌ No se pudo procesar la respuesta. La API pudo haber cambiado.");
+      throw new Error("❌ No se pudo procesar la respuesta. La API pudo haber cambiado.")
 
     const id = Buffer.from(
       JSON.stringify({ newResumeArray, cookie: headers.cookie })
-    ).toString("base64");
-    return { text, id };
+    ).toString("base64")
+    return { text, id }
   },
-};
+}
 
-// 🔥 Detecta mención al bot
-const handler = async (msg, { conn }) => {
+// 🔥 Handler principal
+const handler = async (m, { conn }) => {
   try {
-    const chatId = msg.key.remoteJid;
-    const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
-    const botNumber = conn.user?.id?.split(':')[0] + '@s.whatsapp.net';
+    const botNumber = conn.user?.id?.split(':')[0] + '@s.whatsapp.net'
+    const mentioned = m?.message?.extendedTextMessage?.contextInfo?.mentionedJid || []
 
-    if (mentioned.includes(botNumber)) {
-      const text =
-        msg.message?.conversation ||
-        msg.message?.extendedTextMessage?.text ||
-        '';
+    if (!mentioned.includes(botNumber)) return // No mencionó al bot
 
-      const cleanText = text.replace(/@\w+/g, '').trim();
-      if (!cleanText) return;
+    const chatId = m.key.remoteJid
+    const text =
+      m.message?.conversation ||
+      m.message?.extendedTextMessage?.text ||
+      ''
+    const cleanText = text.replace(/@\w+/g, '').trim()
 
-      await conn.sendMessage(chatId, { react: { text: '⏳', key: msg.key } });
+    if (!cleanText) return
 
-      const previousId = geminiSessions[msg.sender];
-      const result = await gemini.ask(cleanText, previousId);
-      geminiSessions[msg.sender] = result.id;
+    await conn.sendMessage(chatId, { react: { text: '⏳', key: m.key } })
 
-      const name = msg.pushName || 'Usuario';
-      const responseMsg = `╭━〔 *RESPUESTA IA* 〕━⬣
+    const previousId = geminiSessions[m.sender]
+    const result = await gemini.ask(cleanText, previousId)
+    geminiSessions[m.sender] = result.id
 
-│  ✦ Pregunta: ${cleanText}
-│  ✦ Usuario: ${name}
+    const name = m.pushName || 'Usuario'
+    const responseMsg = `╭━〔 *RESPUESTA IA* 〕━⬣
+│ ✦ Pregunta: ${cleanText}
+│ ✦ Usuario: ${name}
 ╰━━━━━━━━━━━━⬣
 
 ${result.text}
 
 ╭━〔 FUENTE 〕━⬣
-│  ✦ Powered by Gemini AI
-╰━━━━━━━━━━━━⬣`;
+│ ✦ Powered by Gemini AI
+╰━━━━━━━━━━━━⬣`
 
-      await conn.sendMessage(chatId, { text: responseMsg, mentions: [msg.sender] }, { quoted: msg });
-      await conn.sendMessage(chatId, { react: { text: '✅', key: msg.key } });
-    }
-  } catch (error) {
-    console.error(error);
-    await conn.sendMessage(msg.key.remoteJid, { text: `❌ Error: ${error.message}` }, { quoted: msg });
+    await conn.sendMessage(
+      chatId,
+      { text: responseMsg, mentions: [m.sender] },
+      { quoted: m }
+    )
+
+    await conn.sendMessage(chatId, { react: { text: '✅', key: m.key } })
+  } catch (err) {
+    console.error(err)
+    await conn.sendMessage(m.key.remoteJid, { text: `❌ Error: ${err.message}` }, { quoted: m })
   }
-};
+}
 
-handler.customPrefix = /@bot/i; // <-- Cambia esto si tu bot tiene otro @nombre
-handler.command = new RegExp();
-handler.tags = ['ai'];
-
-export default handler;
+// 👇 Esto hace que funcione con menciones tipo @bot
+handler.customPrefix = /@bot/i
+handler.command = new RegExp()
+handler.tags = ['ai']
+export default handler
