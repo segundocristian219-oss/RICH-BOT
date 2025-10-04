@@ -12,7 +12,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     key: { participants: "0@s.whatsapp.net", remoteJid: "status@broadcast", fromMe: false, id: "Halo" },
     message: {
       locationMessage: {
-        name: `🤖 𝗖𝗛𝗔𝗧𝗚𝗣𝗧-𝟱 𝗙𝗥𝗢𝗠 𝗠𝗔𝗬𝗔𝗣𝗜`,
+        name: `𝗖𝗛𝗔𝗧𝗚𝗣𝗧-𝟱`,
         jpegThumbnail: thumb2
       }
     },
