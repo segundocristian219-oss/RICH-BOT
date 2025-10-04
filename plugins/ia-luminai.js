@@ -1,5 +1,87 @@
-import axios from 'axios';
 import fetch from 'node-fetch';
+
+// 🌟 API de Gemini
+const gemini = {
+  getNewCookie: async function () {
+    const res = await fetch(
+      "https://gemini.google.com/_/BardChatUi/data/batchexecute?rpcids=maGuAc&source-path=%2F&bl=boq_assistant-bard-web-server_20250814.06_p1&f.sid=-7816331052118000090&hl=en-US&_reqid=173780&rt=c",
+      {
+        headers: {
+          "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+        body: "f.req=%5B%5B%5B%22maGuAc%22%2C%22%5B0%5D%22%2Cnull%2C%22generic%22%5D%5D%5D&",
+        method: "POST",
+      }
+    );
+
+    const cookieHeader = res.headers.get('set-cookie');
+    if (!cookieHeader) throw new Error('No se encontró el encabezado "set-cookie" en la respuesta.');
+    return cookieHeader.split(';')[0];
+  },
+
+  ask: async function (prompt, previousId = null) {
+    if (typeof prompt !== "string" || !prompt?.trim()?.length)
+      throw new Error("❌ Debes escribir un mensaje válido.");
+
+    let resumeArray = null;
+    let cookie = null;
+
+    if (previousId) {
+      try {
+        const s = Buffer.from(previousId, 'base64').toString('utf-8');
+        const j = JSON.parse(s);
+        resumeArray = j.newResumeArray;
+        cookie = j.cookie;
+      } catch {
+        previousId = null;
+      }
+    }
+
+    const headers = {
+      "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+      "x-goog-ext-525001261-jspb": "[1,null,null,null,\"9ec249fc9ad08861\",null,null,null,[4]]",
+      "cookie": cookie || await this.getNewCookie(),
+    };
+
+    const b = [[prompt], ["en-US"], resumeArray];
+    const a = [null, JSON.stringify(b)];
+    const body = new URLSearchParams({ "f.req": JSON.stringify(a) });
+
+    const response = await fetch(
+      `https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate?bl=boq_assistant-bard-web-server_20250729.06_p0&f.sid=4206607810970164620&hl=en-US&_reqid=2813378&rt=c`,
+      { headers, body, method: 'POST' }
+    );
+
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+
+    const data = await response.text();
+    const match = data.matchAll(/^\d+\n(.+?)\n/gm);
+    const chunks = Array.from(match, m => m[1]);
+
+    let text, newResumeArray;
+    let found = false;
+
+    for (const chunk of chunks.reverse()) {
+      try {
+        const realArray = JSON.parse(chunk);
+        const parse1 = JSON.parse(realArray[0][2]);
+        if (parse1 && parse1[4] && parse1[4][0] && parse1[4][0][1] && typeof parse1[4][0][1][0] === 'string') {
+          newResumeArray = [...parse1[1], parse1[4][0][0]];
+          text = parse1[4][0][1][0].replace(/\*\*(.+?)\*\*/g, `*$1*`);
+          found = true;
+          break;
+        }
+      } catch {}
+    }
+
+    if (!found) throw new Error("❌ No se pudo procesar la respuesta. La API pudo haber cambiado.");
+
+    const id = Buffer.from(JSON.stringify({ newResumeArray, cookie: headers.cookie })).toString('base64');
+    return { text, id };
+  }
+};
+
+const geminiSessions = {};
 
 const handler = async (msg, { conn, args, command }) => {
   const text = args.join(' ');
@@ -7,30 +89,18 @@ const handler = async (msg, { conn, args, command }) => {
   const pref = global.prefixes?.[0] || ".";
 
   if (!text) {
-    return conn.sendMessage(chatId, {
-      text: `✳️ Ingresa tu pregunta\n📌 Ejemplo: *${pref}${command}* ¿quién inventó WhatsApp?`
-    }, { quoted: msg });
+    return conn.sendMessage(chatId, {   
+      text: `✳️ Ingresa tu pregunta\n📌 Ejemplo: *${pref}${command}* ¿quién inventó WhatsApp?`   
+    }, { quoted: msg });  
   }
 
   try {
     await conn.sendMessage(chatId, { react: { text: '⏳', key: msg.key } });
 
     const name = msg.pushName || 'Usuario';
-    const prompt = await getPrompt();
-    let result = '';
-
-    try {
-      result = await luminaiQuery(text, name, prompt);
-      result = cleanResponse(result);
-    } catch (e) {
-      console.error('Error Luminai:', e);
-      try {
-        result = await perplexityQuery(text, prompt);
-      } catch (e) {
-        console.error('Error Perplexity:', e);
-        throw new Error('No se obtuvo respuesta de los servicios');
-      }
-    }
+    const previousId = geminiSessions[msg.sender];
+    const result = await gemini.ask(text, previousId);
+    geminiSessions[msg.sender] = result.id;
 
     const responseMsg = `╭━〔 *RESPUESTA IA* 〕━⬣
 
@@ -38,65 +108,23 @@ const handler = async (msg, { conn, args, command }) => {
 │  ✦ Usuario: ${name}
 ╰━━━━━━━━━━━━⬣
 
-${result}
+${result.text}
 
 ╭━〔 FUENTE 〕━⬣
-│  ✦ Powered by Luminai AI
+│  ✦ Powered by luminai
 ╰━━━━━━━━━━━━⬣`;
 
-    await conn.sendMessage(chatId, {
-      text: responseMsg
-    }, { quoted: msg });
-
+    await conn.sendMessage(chatId, { text: responseMsg }, { quoted: msg });
     await conn.sendMessage(chatId, { react: { text: '✅', key: msg.key } });
 
   } catch (error) {
     console.error(error);
-    await conn.sendMessage(chatId, {
-      text: `❌ Error: ${error.message}`
-    }, { quoted: msg });
-
+    await conn.sendMessage(chatId, {   
+      text: `❌ Error: ${error.message}`   
+    }, { quoted: msg });  
     await conn.sendMessage(chatId, { react: { text: '❌', key: msg.key } });
   }
 };
-
-async function getPrompt() {
-  try {
-    const res = await fetch('https://raw.githubusercontent.com/elrebelde21/LoliBot-MD/main/src/text-chatgpt.txt');
-    return await res.text();
-  } catch {
-    return 'Eres un asistente inteligente';
-  }
-}
-
-function cleanResponse(text) {
-  if (!text) return '';
-  return text
-    .replace(/Maaf, terjadi kesalahan saat memproses permintaan Anda/g, '')
-    .replace(/Generated by BLACKBOX.AI.*?https:\/\/www\.blackbox\.ai/g, '')
-    .replace(/and for API requests replace https:\/\/www\.blackbox\.ai with https:\/\/api\.blackbox\.ai/g, '')
-    .trim();
-}
-
-async function luminaiQuery(q, user, prompt) {
-  const { data } = await axios.post('https://luminai.my.id', {
-    content: q,
-    user: user,
-    prompt: prompt,
-    webSearchMode: true
-  });
-  return data.result;
-}
-
-async function perplexityQuery(q, prompt) {
-  const { data } = await axios.get('https://api.perplexity.ai/chat', {
-    params: {
-      query: encodeURIComponent(q),
-      context: encodeURIComponent(prompt)
-    }
-  });
-  return data.response;
-}
 
 handler.help = ['luminai <pregunta>'];
 handler.command = ['luminai', 'ask'];
