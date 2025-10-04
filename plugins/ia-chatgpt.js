@@ -5,7 +5,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     return conn.reply(m.chat, `🔥 ¡Hola! ¿cómo puedo ayudarte hoy?`, m,);
   }
 
-    const res = await fetch('https://files.catbox.moe/j65sl7.jpg');
+    const res = await fetch('https://files.catbox.moe/p1lbp5.jpg');
     const thumb2 = Buffer.from(await res.arrayBuffer());
 
     const fkontak = {
