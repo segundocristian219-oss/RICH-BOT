@@ -138,7 +138,7 @@ ${result.text}
 }
 
 // 👇 Esto hace que funcione con menciones tipo @bot
-handler.customPrefix = /@bot/i
+handler.customPrefix = /@𝑩𝑨𝑲𝑰 𝑩𝑶𝑻/i
 handler.command = new RegExp()
 handler.tags = ['ai']
 export default handler
