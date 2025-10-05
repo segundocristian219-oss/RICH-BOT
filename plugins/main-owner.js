@@ -26,16 +26,6 @@ let handler = async (m, { conn }) => {
         { name: 'website', url: 'https://Deylin.vercel.app/' }
       ]
     },
-     {
-      name: 'davi zuni 17',
-      desc: '⚡ Colaborador y desarrollador base',
-      image: 'https://iili.io/FmXQQ07.jpg',
-      footer: '🔥 Aporta mejoras en el código y estabilidad del bot.',
-      buttons: [
-        { name: 'WhatsApp', url: 'https://wa.me/15614809253' },
-        { name: 'Github', url: 'https://github.com/Davizuni17' }
-      ]
-    },
     {
       name: '𝑪𝒉𝒐𝒍𝒊𝒕𝒐-𝑿𝒚𝒛',
       desc: '🌀 Co-creador y tester oficial',
