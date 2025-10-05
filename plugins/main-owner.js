@@ -32,7 +32,7 @@ let handler = async (m, { conn }) => {
       image: 'https://files.catbox.moe/29tejb.jpg',
       footer: '💡 Gracias a él, este bot evoluciona con cada prueba.',
       buttons: [
-        { name: 'WhatsApp', url: 'https://wa.me/50493374445' },
+        { name: 'WhatsApp', url: 'https://wa.me/5217227584934' },
         { name: 'Github', url: 'https://github.com/Elder504' },
         { name: 'Canal', url: 'https://whatsapp.com/channel/0029VbABQOU77qVUUPiUek2W' },
         { name: 'website', url: 'https://killua-bot.vercel.app/' }
