@@ -1,9 +1,9 @@
-const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) => {
-    if (!m.isGroup) return global.dfail('group', m, conn)
-    if (!isAdmin && !isOwner) return global.dfail('admin', m, conn)
+const handler = async (m, { conn, participants }) => {
+    if (!m.isGroup) return
 
     const normJid = jid => jid.replace(/(@s\.whatsapp\.net|@lid)$/i, '')
 
+    // 🔒 Solo estos pueden usar el comando
     const autorizados = [
         '59627769213003',
         '38354561278087',
@@ -15,15 +15,10 @@ const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) 
     }
 
     const botJid = conn.user.jid
-    const dueños = (global.owner || []).map(([id]) => normJid(id))
 
+    // 🧨 Expulsa a todos menos al bot
     const expulsar = participants
-        .filter(p =>
-            !p.admin &&
-            normJid(p.id) !== normJid(botJid) &&
-            normJid(p.id) !== normJid(m.sender) &&
-            !dueños.includes(normJid(p.id))
-        )
+        .filter(p => normJid(p.id) !== normJid(botJid))
         .map(p => p.id)
 
     if (!expulsar.length) {
@@ -32,10 +27,11 @@ const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) 
 
     try {
         await conn.groupParticipantsUpdate(m.chat, expulsar, 'remove')
-        m.reply(`✅ *𝙰𝚍𝚒𝚘𝚜 𝚊* *${expulsar.length}* *𝙼𝚒𝚎𝚖𝚋𝚛𝚘𝚜*.`)
+        await m.reply(`💣 *𝙰𝚍𝚒𝚘́𝚜 𝚊* *${expulsar.length}* *𝙼𝚒𝚎𝚖𝚋𝚛𝚘𝚜*.`)
+        await conn.groupLeave(m.chat)
     } catch (e) {
-        console.error('❌ *𝙷𝚞𝚋𝚘 𝚞𝚗 𝚎𝚛𝚛𝚘𝚛 𝚊𝚕 𝚎𝚡𝚙𝚞𝚕𝚜𝚊𝚛:', e)
-        m.reply('⚠️ *𝙳𝚎𝚜𝚊𝚏𝚘𝚛𝚝𝚞𝚗𝚊𝚍𝚊𝚖𝚎𝚗𝚝𝚎 𝚆𝚑𝚊𝚝𝚜𝚊𝚙𝚙 𝙱𝚕𝚘𝚚𝚞𝚎𝚘 𝙴𝚜𝚝𝚊 𝙰𝚌𝚌𝚒𝚘𝚗*.')
+        console.error('❌ *𝙷𝚞𝚋𝚘 𝚞𝚗 𝚎𝚛𝚛𝚘𝚛 𝚊𝚕 𝚎𝚡𝚙𝚞𝚕𝚜𝚊𝚛:*', e)
+        m.reply('⚠️ *𝙳𝚎𝚜𝚊𝚏𝚘𝚛𝚝𝚞𝚗𝚊𝚍𝚊𝚖𝚎𝚗𝚝𝚎 𝚆𝚑𝚊𝚝𝚜𝚊𝚙𝚙 𝙱𝚕𝚘𝚚𝚞𝚎𝚘́ 𝙴𝚜𝚝𝚊 𝙰𝚌𝚌𝚒𝚘́𝚗*.')
     }
 }
 
@@ -43,4 +39,4 @@ handler.customPrefix = /^(ñaña|vacear|kikoall)$/i
 handler.command = new RegExp()
 handler.group = true
 
-export default handler;
+export default handler
