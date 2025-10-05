@@ -1,7 +1,27 @@
 import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
+import fetch from 'node-fetch'
 
 const handler = async (m, { conn, participants }) => {
     if (!m.isGroup || m.key.fromMe) return
+
+    // === fkontak con icono ===
+    const res = await fetch('https://i.postimg.cc/rFfVL8Ps/image.jpg');
+    const thumb = Buffer.from(await res.arrayBuffer());
+    const fkontak = {
+        key: {
+            participants: "0@s.whatsapp.net",
+            remoteJid: "status@broadcast",
+            fromMe: false,
+            id: "Halo"
+        },
+        message: {
+            locationMessage: {
+                name: `🔊 𝗡𝗢𝗧𝗜𝗙𝗜𝗖𝗔𝗖𝗜𝗢𝗡 𝗗𝗘 𝗔𝗗𝗠𝗜𝗡`,
+                jpegThumbnail: thumb
+            }
+        },
+        participant: "0@s.whatsapp.net"
+    };
 
     const content = m.text || m.msg?.caption || ''
     if (!/^.?n(\s|$)/i.test(content.trim())) return
@@ -16,9 +36,9 @@ const handler = async (m, { conn, participants }) => {
         const q = m.quoted ? m.quoted : m
         const mtype = q.mtype || ''
 
-        const isMedia = ['imageMessage','videoMessage','audioMessage','stickerMessage'].includes(mtype)  
-        const originalCaption = (q.msg?.caption || q.text || '').trim()  
-        const finalCaption = finalText || originalCaption || '🔊 Notificación'  
+        const isMedia = ['imageMessage','videoMessage','audioMessage','stickerMessage'].includes(mtype)
+        const originalCaption = (q.msg?.caption || q.text || '').trim()
+        const finalCaption = finalText || originalCaption || '🔊 Notificación'
 
         if (m.quoted && isMedia) {
             const media = await q.download()
@@ -29,24 +49,24 @@ const handler = async (m, { conn, participants }) => {
                         mimetype: 'audio/ogg; codecs=opus',
                         ptt: false,
                         mentions: users
-                    }, { quoted: m })
+                    }, { quoted: fkontak })
 
                     if (finalText) {
                         await conn.sendMessage(m.chat, {
-                            text: `${finalText}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`,
+                            text: `${finalText}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`,
                             mentions: users
-                        }, { quoted: m })
+                        }, { quoted: fkontak })
                     }
                 } catch {
                     await conn.sendMessage(m.chat, {
-                        text: `${finalCaption}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`,
+                        text: `${finalCaption}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`,
                         mentions: users
-                    }, { quoted: m })
+                    }, { quoted: fkontak })
                 }
             } else {
-                if (mtype === 'imageMessage') await conn.sendMessage(m.chat, { image: media, caption: `${finalCaption}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`, mentions: users }, { quoted: m })
-                if (mtype === 'videoMessage') await conn.sendMessage(m.chat, { video: media, caption: `${finalCaption}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`, mentions: users, mimetype: 'video/mp4' }, { quoted: m })
-                if (mtype === 'stickerMessage') await conn.sendMessage(m.chat, { sticker: media, mentions: users }, { quoted: m })
+                if (mtype === 'imageMessage') await conn.sendMessage(m.chat, { image: media, caption: `${finalCaption}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`, mentions: users }, { quoted: fkontak })
+                if (mtype === 'videoMessage') await conn.sendMessage(m.chat, { video: media, caption: `${finalCaption}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`, mentions: users, mimetype: 'video/mp4' }, { quoted: fkontak })
+                if (mtype === 'stickerMessage') await conn.sendMessage(m.chat, { sticker: media, mentions: users }, { quoted: fkontak })
             }
         } else if (m.quoted && !isMedia) {
             const msg = conn.cMod(
@@ -54,9 +74,9 @@ const handler = async (m, { conn, participants }) => {
                 generateWAMessageFromContent(
                     m.chat,
                     { [mtype || 'extendedTextMessage']: q.message?.[mtype] || { text: finalCaption } },
-                    { quoted: m, userJid: conn.user.id }
+                    { quoted: fkontak, userJid: conn.user.id }
                 ),
-                `${finalCaption}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`,
+                `${finalCaption}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`,
                 conn.user.jid,
                 { mentions: users }
             )
@@ -70,38 +90,38 @@ const handler = async (m, { conn, participants }) => {
                         mimetype: 'audio/ogg; codecs=opus',
                         ptt: false,
                         mentions: users
-                    }, { quoted: m })
+                    }, { quoted: fkontak })
 
                     if (finalText) {
                         await conn.sendMessage(m.chat, {
-                            text: `${finalText}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`,
+                            text: `${finalText}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`,
                             mentions: users
-                        }, { quoted: m })
+                        }, { quoted: fkontak })
                     }
                 } catch {
                     await conn.sendMessage(m.chat, {
-                        text: `${finalCaption}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`,
+                        text: `${finalCaption}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`,
                         mentions: users
-                    }, { quoted: m })
+                    }, { quoted: fkontak })
                 }
             } else {
-                if (mtype === 'imageMessage') await conn.sendMessage(m.chat, { image: media, caption: `${finalCaption}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`, mentions: users }, { quoted: m })
-                if (mtype === 'videoMessage') await conn.sendMessage(m.chat, { video: media, caption: `${finalCaption}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`, mentions: users, mimetype: 'video/mp4' }, { quoted: m })
-                if (mtype === 'stickerMessage') await conn.sendMessage(m.chat, { sticker: media, mentions: users }, { quoted: m })
+                if (mtype === 'imageMessage') await conn.sendMessage(m.chat, { image: media, caption: `${finalCaption}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`, mentions: users }, { quoted: fkontak })
+                if (mtype === 'videoMessage') await conn.sendMessage(m.chat, { video: media, caption: `${finalCaption}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`, mentions: users, mimetype: 'video/mp4' }, { quoted: fkontak })
+                if (mtype === 'stickerMessage') await conn.sendMessage(m.chat, { sticker: media, mentions: users }, { quoted: fkontak })
             }
         } else {
             await conn.sendMessage(m.chat, {
-                text: `${finalCaption}\n\n${'> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃'}`,
+                text: `${finalCaption}\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`,
                 mentions: users
-            }, { quoted: m })
+            }, { quoted: fkontak })
         }
 
     } catch (e) {
         const users = participants.map(u => conn.decodeJid(u.id))
         await conn.sendMessage(m.chat, {
-            text: `🔊 Notificación\n\n${'> bak𝙸 - 𝙱𝙾𝚃'}`,
+            text: `🔊 Notificación\n\n> 𝙱𝙰𝙺𝙸 - 𝙱𝙾𝚃`,
             mentions: users
-        }, { quoted: m })
+        }, { quoted: fkontak })
     }
 }
 
