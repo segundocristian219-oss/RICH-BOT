@@ -52,8 +52,8 @@ const handler = async (msg, { conn, text }) => {
   };
 
   const apis = [
-    tryApi("MyAPI", `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp3&quality=128&apikey=may-0595dca2`),
-    tryApi("Adonix", `https://apiadonix.kozow.com/download/ytmp3?apikey=AdonixKeyo4vwtf9331&url=${encodeURIComponent(videoUrl)}&quality=128`)
+    tryApi("MyAPI", `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp3&quality=64&apikey=may-0595dca2`),
+    tryApi("Adonix", `https://apiadonix.kozow.com/download/ytmp3?apikey=AdonixKeyo4vwtf9331&url=${encodeURIComponent(videoUrl)}&quality=64`)
   ];
 
   try {
