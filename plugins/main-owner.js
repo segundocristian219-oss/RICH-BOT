@@ -5,7 +5,7 @@ let handler = async (m, { conn }) => {
 
   m.react('⛩️')
 
-  const numCreador = '5215561076182'
+  const numCreador = '+52 722 758 4934'
   const name = ''
   const empresa = 'Cristian - Servicios tecnológicos ⛩️'
   const correo = 'correo@empresa.com'
