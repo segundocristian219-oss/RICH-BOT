@@ -1,117 +1,101 @@
-import fetch from "node-fetch"
-import yts from "yt-search"
+import fs from "fs";
+import path from "path";
 
-const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
+/**
+ * Objeto global para manejar todos los handlers de comandos si quieres ejecutarlos directamente.
+ * Ejemplo: global.handlers = { kick: handlerKick, abrirgrupo: handlerAbrirGrupo, ... }
+ */
+if (!global.handlers) global.handlers = {};
 
-const handler = async (m, { conn, text, command }) => {
-  try {
-    if (!text?.trim()) {
-      return conn.reply(m.chat, "✦ Por favor, escribe el nombre o el enlace del video que deseas buscar.", m)
-    }
+/**
+ * Handler principal: agrega un sticker a un comando y también detecta stickers para ejecutar comandos
+ */
+const stickerHandler = async (msg, { conn, args }) => {
+  const chatId = msg.key.remoteJid;
+  const isGroup = chatId.endsWith("@g.us");
+  const senderId = msg.key.participant || msg.key.remoteJid;
+  const senderNum = senderId.replace(/[^0-9]/g, "");
+  const isOwner = global.owner?.some(([id]) => id === senderNum);
+  const isFromMe = msg.key.fromMe;
 
-    await conn.sendMessage(m.chat, { react: { text: "🔎", key: m.key } }) // buscando
+  // Verificación de permisos (solo al usar el comando .addco)
+  const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const comandoArg = args?.join(" ").trim();
 
-    const videoIdMatch = text.match(youtubeRegexID)
-    const searchQuery = videoIdMatch ? `https://youtu.be/${videoIdMatch[1]}` : text
-
-    const searchResults = await yts(searchQuery)
-    let video = null
-
-    if (videoIdMatch) {
-      const id = videoIdMatch[1]
-      video = searchResults.all.find(v => v.videoId === id) || searchResults.videos.find(v => v.videoId === id)
-    }
-
-    if (!video) video = searchResults.videos?.[0] || null
-    if (!video) {
-      await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } })
-      return m.reply("✧ No se encontraron resultados para tu búsqueda.")
-    }
-
-    const { title, thumbnail, timestamp, views, ago, url, author } = video
-    const canal = author?.name || "Desconocido"
-    const vistas = formatViews(views || 0)
-
-    const infoMessage = `> *_${title}_*
-✩ *Duración*: ${timestamp || "no disponible"}
-✩ *Visitas*: ${vistas}
-✩ *Autor*: ${canal}
-✩ *Publicado*: ${ago || "no disponible"}
-✩ *Url*: ${url}`
-
-    const thumb = (await conn.getFile(thumbnail))?.data
-
-    const preview = {
-      contextInfo: {
-        externalAdReply: {
-          title: '',
-          body: botname,
-          mediaType: 1,
-          previewType: 0,
-          mediaUrl: url,
-          sourceUrl: url,
-          thumbnail: thumb,
-          renderLargerThumbnail: true,
-        },
-      },
-    }
-
-    await conn.reply(m.chat, infoMessage, m, preview)
-
-    const isVideo = ['play2', 'ytv', 'ytmp4', 'mp4'].includes(command)
-    if (!isVideo) {
-      await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } })
-      return conn.reply(m.chat, "✦ Comando no reconocido. Usa un comando válido para descargar video.", m)
-    }
-
-    await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } }) // descargando
-
-    const tryApi = async (apiName, apiUrl) => {
-      const res = await fetch(apiUrl)
-      const json = await res.json()
-      if (!json.status || !json.data?.url) {
-        throw new Error(`${apiName}: ${json.message || "sin enlace válido"}`)
+  if (comandoArg) {
+    // Se está intentando vincular un sticker a un comando
+    if (isGroup && !isOwner && !isFromMe) {
+      const metadata = await conn.groupMetadata(chatId);
+      const participant = metadata.participants.find(p => p.id === senderId);
+      const isAdmin = participant?.admin === "admin" || participant?.admin === "superadmin";
+      if (!isAdmin) {
+        return conn.sendMessage(chatId, {
+          text: "🚫 *Solo administradores, owner o el bot pueden usar este comando.*"
+        }, { quoted: msg });
       }
-      return { url: json.data.url, api: apiName }
+    } else if (!isGroup && !isOwner && !isFromMe) {
+      return conn.sendMessage(chatId, {
+        text: "🚫 *Solo owner o el bot pueden usar este comando en privado.*"
+      }, { quoted: msg });
     }
 
-    const apis = [
-      tryApi("MyAPI", `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(url)}&type=mp4&apikey=may-0595dca2`),
-      tryApi("Adonix", `https://myapiadonix.casacam.net/download/yt?apikey=Adofreekey&url=${encodeURIComponent(url)}&format=video`)
-    ]
+    if (!quoted?.stickerMessage) {
+      return conn.sendMessage(chatId, {
+        text: "❌ *Responde a un sticker para asignarle un comando.*"
+      }, { quoted: msg });
+    }
 
-    const winner = await Promise.any(apis)
-    const downloadUrl = winner.url
+    const fileSha = quoted.stickerMessage.fileSha256?.toString("base64");
+    if (!fileSha) {
+      return conn.sendMessage(chatId, {
+        text: "❌ *No se pudo obtener el ID único del sticker.*"
+      }, { quoted: msg });
+    }
 
-    await conn.sendMessage(m.chat, {
-      video: { url: downloadUrl },
-      mimetype: 'video/mp4',
-      fileName: `${title}.mp4`,
-      caption: `> *_✦ Descarga completa (${winner.api}). Aquí tienes tu video._*`
-    }, { quoted: m })
+    const jsonPath = path.resolve("./comandos.json");
+    const data = fs.existsSync(jsonPath)
+      ? JSON.parse(fs.readFileSync(jsonPath, "utf-8"))
+      : {};
 
-    await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } }) // éxito
+    data[fileSha] = comandoArg;
+    fs.writeFileSync(jsonPath, JSON.stringify(data, null, 2));
 
-  } catch (error) {
-    console.error('[ERROR YOUTUBE]', error)
-    await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } })
-    return m.reply(`⚠︎ Se produjo un error al procesar tu solicitud:\n\n${error.message || error}`)
+    await conn.sendMessage(chatId, {
+      react: { text: "✅", key: msg.key }
+    });
+
+    return conn.sendMessage(chatId, {
+      text: `✅ *Sticker vinculado al comando con éxito:* \`${comandoArg}\``,
+      quoted: msg
+    });
   }
-}
 
-handler.command = handler.help = [
-  'play2', 'ytv', 'ytmp4', 'mp4'
-]
+  // Si no se pasan argumentos, se revisa si el mensaje es un sticker enviado
+  const sticker = msg.message?.stickerMessage;
+  if (!sticker) return;
 
-handler.tags = ['descargas']
-//handler.group = true
+  const fileSha = sticker.fileSha256?.toString("base64");
+  const jsonPath = path.resolve("./comandos.json");
+  if (!fs.existsSync(jsonPath)) return;
 
-export default handler
+  const data = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
+  const comando = data[fileSha];
+  if (!comando) return;
 
-function formatViews(views) {
-  if (!views) return "0"
-  if (views >= 1_000_000_000) return `${(views / 1_000_000_000).toFixed(1)}B (${views.toLocaleString()})`
-  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M (${views.toLocaleString()})`
-  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}k (${views.toLocaleString()})`
-  return views.toString()
-}
+  // Ejecuta el comando vinculado
+  await conn.sendMessage(chatId, { text: `Ejecutando comando vinculado: ${comando}` });
+
+  if (global.handlers[comando]) {
+    try {
+      await global.handlers[comando](msg, { conn });
+    } catch (err) {
+      console.error(`Error al ejecutar comando ${comando}:`, err);
+    }
+  }
+};
+
+stickerHandler.command = ["addco"];
+stickerHandler.tags = ["tools"];
+stickerHandler.help = ["addco <comando>"];
+
+export default stickerHandler;
