@@ -33,7 +33,7 @@ const handler = async (msg, { conn }) => {
   })
 }
 
-handler.command = ['lid']
+handler.command = ['lid', 'mylid']
 handler.group = true
 handler.private = false
 
