@@ -8,19 +8,23 @@ const handler = async (msg, { conn }) => {
 
   try {
     let memeUrl;
+    let sourceName;
 
     // Elegir la fuente según el índice
     switch (memeIndex % 3) {
       case 0: // hispamemes
+        sourceName = "hispamemes";
         memeUrl = hispamemes.meme();
         break;
       case 1: // kirito API
+        sourceName = "Kirito API";
         {
           const res = await axios.get("https://api.kirito.my/api/meme?apikey=by_deylin");
-          memeUrl = res.data.url || res.data.result?.url; // dependiendo de la estructura del JSON
+          memeUrl = res.data.url || res.data.result?.url;
         }
         break;
       case 2: // g-mini IA
+        sourceName = "G-Mini IA";
         {
           const res = await axios.get("https://g-mini-ia.vercel.app/api/meme");
           memeUrl = res.data.url || res.data.result?.url;
@@ -28,7 +32,6 @@ const handler = async (msg, { conn }) => {
         break;
     }
 
-    // Incrementar índice para la próxima vez
     memeIndex++;
 
     // Enviar reacción
@@ -44,8 +47,9 @@ const handler = async (msg, { conn }) => {
 
   } catch (e) {
     console.error("❌ Error en el comando meme:", e);
+
     await conn.sendMessage(chatId, {
-      text: "❌ *Ocurrió un error al obtener el meme. Intenta de nuevo más tarde.*"
+      text: `❌ *Ocurrió un error al obtener el meme.*\nFuente: *${["hispamemes","Kirito API","G-Mini IA"][memeIndex % 3]}*\nError: \`${e.message || e}\``
     }, { quoted: msg });
   }
 };
