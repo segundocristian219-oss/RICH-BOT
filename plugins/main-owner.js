@@ -17,7 +17,7 @@ let handler = async (m, { conn }) => {
     {
       name: '𝖧𝖾𝗋𝗇𝖺𝗇𝖽𝖾𝗌.𝗑𝗒𝗓',
       desc: `👑 Creador Principal de 𝖡𝖺𝗄𝗂-𝖡𝗈𝗍`,
-      image: 'https://i.postimg.cc/nzt0Jht5/1756185471053.jpg',
+      image: 'https://cdn.russellxz.click/af65870a.jpeg',
       footer: '𝗄𝗄',
       buttons: [
         { name: 'WhatsApp', url: 'https://wa.me/5215561076182' }
