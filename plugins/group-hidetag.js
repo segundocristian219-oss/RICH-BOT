@@ -16,7 +16,7 @@ const handler = async (m, { conn, participants }) => {
         },
         message: {
             locationMessage: {
-                name: `🔊 𝗡𝗢𝗧𝗜𝗙𝗜𝗖𝗔𝗖𝗜𝗢𝗡 𝗗𝗘 𝗔𝗗𝗠𝗜𝗡`,
+                name: `𝖧𝗈𝗅𝖺, 𝖲𝗈𝗒 𝖡𝖺𝗄𝗂-𝖡𝗈𝗍`,
                 jpegThumbnail: thumb
             }
         },
