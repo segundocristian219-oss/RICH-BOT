@@ -1,3 +1,4 @@
+import fs from 'fs'
 import PhoneNumber from 'awesome-phonenumber'
 
 let handler = async (m, { conn }) => {
@@ -7,13 +8,12 @@ let handler = async (m, { conn }) => {
 
   const imageUrl = 'https://cdn.russellxz.click/46265152.jpeg'
   const numCreador = '5215561076182'
-  const ownerJid = numCreador + '@s.whatsapp.net'
-
   const name = 'Cristian ⛩️'
   const empresa = 'Cristian - Servicios tecnológicos ⛩️'
   const correo = 'correo@empresa.com'
 
-  const vcard = `
+  // Crear contenido de vCard
+  const vcardContent = `
 BEGIN:VCARD
 VERSION:3.0
 N:;${name};;;
@@ -23,13 +23,17 @@ TEL;TYPE=CELL:${new PhoneNumber('+' + numCreador).getNumber('international')}
 EMAIL:${correo}
 END:VCARD`.trim()
 
+  // Guardar temporalmente en un archivo
+  const filePath = './owner.vcf'
+  fs.writeFileSync(filePath, vcardContent)
+
+  // Enviar la vCard como documento
   await conn.sendMessage(
     m.chat,
     {
-      contacts: {
-        displayName: name,
-        contacts: [{ vcard }]
-      },
+      document: { url: filePath },
+      fileName: 'Cristian.vcf',
+      mimetype: 'text/vcard',
       contextInfo: {
         mentionedJid: [m.sender],
         externalAdReply: {
@@ -44,6 +48,9 @@ END:VCARD`.trim()
     },
     { quoted: m }
   )
+
+  // Opcional: borrar el archivo temporal después de enviarlo
+  fs.unlinkSync(filePath)
 }
 
 handler.help = ['owner']
