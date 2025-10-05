@@ -6,7 +6,7 @@ const handler = async (m, { conn, participants, isAdmin, isBotAdmin, isOwner }) 
 
     const autorizados = [
         '59627769213003',
-        '59627769213003',
+        '38354561278087',
         '151600148549841'
     ]
 
