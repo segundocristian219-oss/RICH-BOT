@@ -29,13 +29,11 @@ let handler = async (m, { conn }) => {
     {
       name: '𝑪𝒉𝒐𝒍𝒊𝒕𝒐-𝑿𝒚𝒛',
       desc: '🌀 Co-creador y tester oficial',
-      image: 'https://files.catbox.moe/29tejb.jpg',
+      image: 'https://cdn.russellxz.click/54d7671b.jpeg',
       footer: '💡 Gracias a él, este bot evoluciona con cada prueba.',
       buttons: [
-        { name: 'WhatsApp', url: 'https://wa.me/5217227584934' },
-        { name: 'Github', url: 'https://github.com/Elder504' },
-        { name: 'Canal', url: 'https://whatsapp.com/channel/0029VbABQOU77qVUUPiUek2W' },
-        { name: 'website', url: 'https://killua-bot.vercel.app/' }
+        { name: 'WhatsApp', url: 'https://wa.me/5217227584934' }
+
       ]
     }
   ]
