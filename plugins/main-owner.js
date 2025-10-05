@@ -15,22 +15,20 @@ let handler = async (m, { conn }) => {
 
   const owners = [
     {
-      name: 'Deylin',
-      desc: `👑 Creador Principal de ${botname}`,
+      name: '𝖧𝖾𝗋𝗇𝖺𝗇𝖽𝖾𝗌.𝗑𝗒𝗓',
+      desc: `👑 Creador Principal de 𝖡𝖺𝗄𝗂-𝖡𝗈𝗍`,
       image: 'https://i.postimg.cc/nzt0Jht5/1756185471053.jpg',
-      footer: '✨ Apóyame en mis proyectos y descubre más en mis redes.',
+      footer: '𝗄𝗄',
       buttons: [
-        { name: 'WhatsApp', url: 'https://wa.me/50432955554' },
-        { name: 'Canal', url: 'https://whatsapp.com/channel/0029VbAzn9GGU3BQw830eA0F' },
-        { name: 'Paypal', url: 'https://www.paypal.me/DeylinB' },
-        { name: 'website', url: 'https://Deylin.vercel.app/' }
+        { name: 'WhatsApp', url: 'https://wa.me/50432955554' }
+
       ]
     },
     {
-      name: '𝑪𝒉𝒐𝒍𝒊𝒕𝒐-𝑿𝒚𝒛',
-      desc: '🌀 Co-creador y tester oficial',
+      name: '𝖠𝗇𝗀𝖾𝗅.𝗑𝗒𝗓',
+      desc: 'tester oficial 🏞️',
       image: 'https://cdn.russellxz.click/54d7671b.jpeg',
-      footer: '💡 Gracias a él, este bot evoluciona con cada prueba.',
+      footer: '𝖭𝗂𝖼𝖾 𝖣𝗈 𝖸𝗈𝗎',
       buttons: [
         { name: 'WhatsApp', url: 'https://wa.me/5217227584934' }
 
