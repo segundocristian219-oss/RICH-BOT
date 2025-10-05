@@ -10,6 +10,6 @@ handler.help = ['update']
 handler.tags = ['owner']
 handler.customPrefix = /^\.?(update)$/i;
 handler.command = new RegExp(); 
-handler.rowner = true
+handler.rowner = false
 
 export default handler
