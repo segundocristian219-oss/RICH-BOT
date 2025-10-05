@@ -10,61 +10,64 @@ const handler = async (msg, { conn, text }) => {
     );
   }
 
-  await conn.sendMessage(msg.key.remoteJid, { react: { text: "🕒", key: msg.key } });
+  const doProcess = async (retry = false) => {
+    await conn.sendMessage(msg.key.remoteJid, { 
+      react: { text: retry ? "🛠️" : "🕒", key: msg.key } 
+    });
 
-  const res = await yts({ query: text, hl: "es", gl: "MX" });
-  const song = res.videos[0];
-  if (!song) {
-    return conn.sendMessage(
-      msg.key.remoteJid,
-      { text: "❌ *𝙽𝚘 𝙷𝚞𝚋𝚘 𝚁𝚎𝚜𝚞𝚕𝚝𝚊𝚍𝚘𝚜*." },
-      { quoted: msg }
-    );
-  }
+    const res = await yts({ query: text, hl: "es", gl: "MX" });
+    const song = res.videos[0];
+    if (!song) {
+      return conn.sendMessage(
+        msg.key.remoteJid,
+        { text: "❌ *𝙽𝚘 𝙷𝚞𝚋𝚘 𝚁𝚎𝚜𝚞𝚕𝚝𝚊𝚍𝚘𝚜*." },
+        { quoted: msg }
+      );
+    }
 
-  const { url: videoUrl, title, timestamp: duration, author, thumbnail } = song;
-  const artista = author.name;
+    const { url: videoUrl, title, timestamp: duration, author, thumbnail } = song;
+    const artista = author.name;
 
-  const extractUrl = (data) => {
-    const search = (obj) => {
-      if (!obj) return null;
-      if (typeof obj === "string" && obj.includes("http")) {
-        if (/.(mp3|m4a|opus|webm)$/i.test(obj)) {
-          return obj;
+    const extractUrl = (data) => {
+      const search = (obj) => {
+        if (!obj) return null;
+        if (typeof obj === "string" && obj.includes("http")) {
+          if (/\.(mp3|m4a|opus|webm)$/i.test(obj)) {
+            return obj;
+          }
         }
-      }
-      if (typeof obj === "object") {
-        for (const key in obj) {
-          const found = search(obj[key]);
-          if (found) return found;
+        if (typeof obj === "object") {
+          for (const key in obj) {
+            const found = search(obj[key]);
+            if (found) return found;
+          }
         }
-      }
-      return null;
+        return null;
+      };
+      return search(data);
     };
-    return search(data);
-  };
 
-  const tryApi = async (apiName, url) => {
-    const r = await axios.get(url, { timeout: 10000 });
-    const audioUrl = extractUrl(r.data);
-    if (audioUrl) return { url: audioUrl, api: apiName };
-    throw new Error(`${apiName}: No entregó URL válido`);
-  };
+    const tryApi = async (apiName, url) => {
+      const r = await axios.get(url, { timeout: 10000 });
+      const audioUrl = extractUrl(r.data);
+      if (audioUrl) return { url: audioUrl, api: apiName };
+      throw new Error(`${apiName}: No entregó URL válido`);
+    };
 
-  const apis = [
-    tryApi("MyAPI", `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp3&quality=64&apikey=may-0595dca2`),
-    tryApi("Adonix", `https://apiadonix.kozow.com/download/ytmp3?apikey=AdonixKeyo4vwtf9331&url=${encodeURIComponent(videoUrl)}&quality=64`)
-  ];
+    const apis = [
+      tryApi("MyAPI", `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(videoUrl)}&type=mp3&quality=64&apikey=may-0595dca2`),
+      tryApi("Adonix", `https://apiadonix.kozow.com/download/ytmp3?apikey=AdonixKeyo4vwtf9331&url=${encodeURIComponent(videoUrl)}&quality=64`)
+    ];
 
-  try {
-    const winner = await Promise.any(apis); // la primera que responda bien
-    const audioDownloadUrl = winner.url;
+    try {
+      const winner = await Promise.any(apis);
+      const audioDownloadUrl = winner.url;
 
-    await conn.sendMessage(  
-      msg.key.remoteJid,  
-      {  
-        image: { url: thumbnail },  
-        caption: `
+      await conn.sendMessage(  
+        msg.key.remoteJid,  
+        {  
+          image: { url: thumbnail },  
+          caption: `
 
 > *𝙰𝚄𝙳𝙸𝙾 𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳𝙴𝚁*
 
@@ -81,26 +84,36 @@ const handler = async (msg, { conn, text }) => {
 
 > \`\`\`© 𝖯𝗈𝗐𝖾𝗋𝖾𝗱 𝖻𝗒 𝗁𝖾𝗋𝗇𝖺𝗇𝖽𝖾𝗓.𝗑𝗒𝗓\`\`\`
 `.trim()
-      },
-      { quoted: msg }
-    );
+        },
+        { quoted: msg }
+      );
 
-    await conn.sendMessage(msg.key.remoteJid, {  
-      audio: { url: audioDownloadUrl },  
-      mimetype: "audio/mpeg",  
-      fileName: `${title.slice(0, 30)}.mp3`.replace(/[^\w\s.-]/gi, ''),  
-      ptt: false  
-    }, { quoted: msg });  
+      await conn.sendMessage(msg.key.remoteJid, {  
+        audio: { url: audioDownloadUrl },  
+        mimetype: "audio/mpeg",  
+        fileName: `${title.slice(0, 30)}.mp3`.replace(/[^\w\s.-]/gi, ''),  
+        ptt: false  
+      }, { quoted: msg });  
 
-    await conn.sendMessage(msg.key.remoteJid, { react: { text: "✅", key: msg.key } });
+      await conn.sendMessage(msg.key.remoteJid, { react: { text: "✅", key: msg.key } });
 
-  } catch (e) {
-    const errorMsg = `❌ *Error:* ${
-      e.message || "Ninguna API respondió"
-    }\n\n🔸 *Posibles soluciones:*\n• Verifica el nombre de la canción\n• Intenta con otro tema\n• Prueba más tarde`;
+    } catch (e) {
+      // si falla el primer intento, reintenta una vez
+      if (!retry) {
+        console.log("Primer intento falló, reintentando...");
+        return await doProcess(true);
+      } else {
+        const errorMsg = `❌ *Error:* ${
+          e.message || "Ninguna API respondió"
+        }\n\n🔸 *Posibles soluciones:*\n• Verifica el nombre de la canción\n• Intenta con otro tema\n• Prueba más tarde`;
 
-    await conn.sendMessage(msg.key.remoteJid, { text: errorMsg }, { quoted: msg });
-  }
+        await conn.sendMessage(msg.key.remoteJid, { text: errorMsg }, { quoted: msg });
+      }
+    }
+  };
+
+  // inicia el primer intento
+  await doProcess(false);
 };
 
 handler.command = ["play"];
