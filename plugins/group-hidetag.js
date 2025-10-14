@@ -16,7 +16,7 @@ const handler = async (m, { conn, participants }) => {
         },
         message: {
             locationMessage: {
-                name: `𝖧𝗈𝗅𝖺, 𝖲𝗈𝗒 RICH BOT𝗍`,
+                name: `𝖧𝗈𝗅𝖺, 𝖲𝗈𝗒 RICH BOT`,
                 jpegThumbnail: thumb
             }
         },
