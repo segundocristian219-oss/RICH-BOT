@@ -2,14 +2,13 @@ import { watchFile, unwatchFile } from 'fs'
 import chalk from 'chalk'
 import { fileURLToPath } from 'url'
 
-global.owner = [
-   ['153550063669384', 'Hernandez', true],
-    ['230008920490230', 'Rich', true]
-]
+global.owner = ['230008920490230', '15350063669384']
 
 global.mods = []
 global.prems = []
 
+global.emoji = '🍡'
+global.emoji2 = '🍥'
 global.namebot = '𝙼𝚊𝚢𝚌𝚘𝚕𝐏𝐥𝐮𝐬'
 global.redes = 'https://chat.whatsapp.com/KDI7NNovzdwJayx1gI1cue?mode=ems_copy_t'
 global.botname = '𝕄𝕒𝕪𝕔𝕠𝕝𝐏𝐥𝐮𝐬'
@@ -20,18 +19,20 @@ global.moneda = 'MayCoins'
 global.libreria = 'Baileys'
 global.baileys = 'V 6.7.16'
 global.vs = '2.2.0'
+global.usedPrefix = '.'
+global.user2 = '18'
 global.sessions = 'MayBot'
 global.jadi = 'MayBots'
 global.yukiJadibts = true
 
 global.namecanal = '𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 <𝟑 • Actualizaciones'
-global.idcanal = '120363372883715167@newsletter'
-global.idcanal2 = '120363372883715167@newsletter'
-global.canal = 'https://whatsapp.com/channel/0029VayXJte65yD6LQGiRB0R'
-global.canalreg = '120363372883715167@newsletter'
+global.idcanal = '120363424241780448@newsletter'
+global.idcanal2 = '120363424241780448@newsletter'
+global.canal = 'https://whatsapp.com/channel/0029VbBIgz1HrDZg92ISUl2M'
+global.canalreg = '120363424241780448@newsletter'
 
 global.ch = {
-  ch1: '120363372883715167@newsletter'
+  ch1: '120363424241780448@newsletter'
 }
 
 global.multiplier = 69
@@ -40,6 +41,6 @@ global.maxwarn = 2
 let file = fileURLToPath(import.meta.url)
 watchFile(file, () => {
   unwatchFile(file)
-  console.log(chalk.redBright("Se actualizo el 'config.js'"))
+  console.log(chalk.redBright("Se actualizó el 'config.js'"))
   import(`file://${file}?update=${Date.now()}`)
 })
