@@ -16,7 +16,7 @@ let handler = async (m, { conn }) => {
   const owners = [
     {
       name: '𝖧𝖾𝗋𝗇𝖺𝗇𝖽𝖾𝗌.𝗑𝗒𝗓',
-      desc: `👑 Creador Principal de RICH BOT`,
+      desc: `👑 Creador Principal de @𝑺𝒙𝒏𝒕𝒐𝒔𝒔𝒔7`,
       image: 'https://cdn.russellxz.click/af65870a.jpeg',
       footer: '𝗄𝗄',
       buttons: [
@@ -25,12 +25,12 @@ let handler = async (m, { conn }) => {
       ]
     },
     {
-      name: 'Rich.𝗑𝗒𝗓',
+      name: 'Santos.𝗑𝗒𝗓',
       desc: 'Dueño Oficial 🏞️',
       image: 'https://cdn.russellxz.click/8e647d33.jpeg',
       footer: '𝖭𝗂𝖼𝖾 𝖣𝗈 𝖸𝗈𝗎',
       buttons: [
-        { name: 'WhatsApp', url: 'https://wa.me/5216644962918' }
+        { name: 'WhatsApp', url: 'https://wa.me/5213142812141' }
 
       ]
     }
@@ -76,7 +76,7 @@ let handler = async (m, { conn }) => {
           },
           interactiveMessage: proto.Message.InteractiveMessage.fromObject({
             body: proto.Message.InteractiveMessage.Body.create({
-              text: `👑 Creadores de RICH BOT`
+              text: `👑 Creadores de @𝑺𝒙𝒏𝒕𝒐𝒔𝒔𝒔7`
             }),
             footer: proto.Message.InteractiveMessage.Footer.create({
               text: 'Conoce a los desarrolladores del bot'
